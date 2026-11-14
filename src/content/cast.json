@@ -1,0 +1,62 @@
+{
+  "otter": {
+    "id": "otter",
+    "name": "The Devin Otter",
+    "model": "assets/models/otter.glb",
+    "x": 0,
+    "z": 0,
+    "facing": 0,
+    "short": "The otter",
+    "role": "Knows everyone on the street",
+    "goal": "Convince the otter you're a real Glaswegian",
+    "card": "assets/images/npcs/otter.webp",
+    "greeting": "Ye're no fae roon here, are ye? Prove it.",
+    "win": "The Devin Otter says you're a real Glaswegian!",
+    "bust": "Busted! The otter spotted the tourist."
+  },
+  "senga": {
+    "id": "senga",
+    "name": "Senga the seagull",
+    "model": "assets/models/seagull.glb",
+    "face": false,
+    "x": -3.4,
+    "z": -4.2,
+    "facing": 0.55,
+    "standIn": {
+      "fur": "#eeeeec",
+      "belly": "#ffffff",
+      "beak": "#f2c230",
+      "hat": "#ffffff",
+      "bobble": "#c9302c"
+    },
+    "short": "Senga",
+    "role": "Runs the chippy",
+    "goal": "Order your chips like a real Glaswegian",
+    "card": "assets/images/npcs/senga.webp",
+    "greeting": "Right, whit're ye havin'? Hurry up, there's a queue!",
+    "win": "Senga slipped you a free pizza crunch!",
+    "bust": "TOURIST! Senga nicked your chips."
+  },
+  "hamish": {
+    "id": "hamish",
+    "name": "Big Hamish",
+    "model": "assets/models/cow.glb",
+    "face": false,
+    "x": 3.4,
+    "z": -5.2,
+    "facing": -0.55,
+    "standIn": {
+      "fur": "#c46a2b",
+      "belly": "#e6b48a",
+      "hat": "#1f2f5a",
+      "bobble": "#1f2f5a"
+    },
+    "short": "Hamish",
+    "role": "Drives the number 9 bus",
+    "goal": "Get on the bus like a real Glaswegian",
+    "card": "assets/images/npcs/hamish.webp",
+    "greeting": "Where ye gaun, pal? Ah've no got all day.",
+    "win": "\"On ye go, son.\" Big Hamish let you on!",
+    "bust": "\"Next!\" Big Hamish shut the doors on you."
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "senga": {
+    "name": "Senga (Glasgow seagull)",
+    "voice_id": "U8lGdXfIYVx0Nas6m5XL",
+    "description": "A thick, authentic working-class Glasgow, Scotland accent, strong and unmistakably Glaswegian, not generic British or Irish. A woman in her 50s who runs a busy chip shop: sharp, fast-talking, brassy and funny, suspicious of tourists but warm underneath. Broad Glaswegian vowels, rolled Rs, a slightly raspy voice, a fun cartoon seagull character in a game."
+  },
+  "hamish": {
+    "name": "Big Hamish (Glasgow bus driver)",
+    "voice_id": "KnVW5icoKhKlU7DbTW8i",
+    "description": "A thick, authentic working-class Glasgow, Scotland accent, strong and unmistakably Glaswegian, not generic British or Irish. A big man in his 60s, a city bus driver: deep, slow, gruff and deadpan, unimpressed, has heard every excuse, dry humour, kind deep down. Broad Glaswegian vowels, rolled Rs, a low rumbling voice, a fun cartoon Highland cow character in a game."
+  },
+  "otter_in_library": false,
+  "date": "2026-11-14"
+}

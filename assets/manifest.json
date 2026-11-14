@@ -288,6 +288,30 @@
       "made_by": "Sadman (Claude Code)",
       "date": "2026-11-14",
       "notes": "Scottish Devin otter (tam o' shanter, kilt, sporran); input for Meshy image-to-3D. Earlier faceted take: art/otter-scot.png"
+    },
+    {
+      "id": "npc-senga-ref",
+      "file": "art/npcs/seagull.png",
+      "tool": "ChatGPT image gen (gpt-6.1-sol, medium) via scripts/codex_image.py",
+      "reference": "art/otter-scot-smooth.png",
+      "prompt": "art/npcs/seagull.prompt.txt",
+      "date": "2026-11-14",
+      "note": "Meshy reference for Senga. Gemini version for comparison: art/npcs/seagull-gemini.json (picture kept out of the repo)"
+    },
+    {
+      "id": "npc-hamish-ref",
+      "file": "art/npcs/cow.png",
+      "tool": "ChatGPT image gen (gpt-6.1-sol, medium) via scripts/codex_image.py",
+      "reference": "art/otter-scot-smooth.png",
+      "prompt": "art/npcs/cow.prompt.txt",
+      "date": "2026-11-14",
+      "note": "Meshy reference for Big Hamish. Gemini version: art/npcs/cow-gemini.json"
+    },
+    {
+      "id": "npc-cards",
+      "file": "public/assets/images/npcs/*.webp",
+      "tool": "320px crops of the three reference pictures",
+      "date": "2026-11-14"
     }
   ],
   "_example": {

@@ -1,0 +1,15 @@
+{
+  "engine": "Codex built-in image_gen",
+  "model": "gpt-6.1-sol, medium effort",
+  "references": [
+    "hackathons/devin-game-jam-2026/game-repo/art/otter-scot-smooth.png"
+  ],
+  "prompt": "The reference image is the Devin Otter, the main character of our game. Make ONE new character reference image for an image-to-3D tool: a NEW character from the same game, in exactly the same style and proportions as the otter.\n\nCharacter: Big Hamish the Highland cow, a Glasgow bus driver. A chunky, round, plush-toy Highland cow: long shaggy ginger-orange fur with a fringe falling over the eyes (eyes still just visible: round, black and glossy like the otter's), two short curved cream horns, a big soft pink-beige nose with two nostrils, small floppy ears, short arms and big soft dark hooves. He wears a navy bus driver's jacket with a small badge and a navy driver's cap perched between the horns, and holds a big round black bus steering wheel in front of his belly with both hooves. Gruff but friendly, unimpressed expression, like he has heard every excuse.\n\nStyle: identical to the reference otter: polished stylised 3D game character render (Pixar / modern mobile game quality), SMOOTH rounded forms, NOT low poly, no facets; soft plush-like fur shading, fabric weave visible on the jacket, cute and chunky like a plush toy, same head-to-body ratio as the otter, readable from far away.\nPose: standing upright on two feet, full body, facing straight at the camera, symmetrical, the steering wheel held in front of the belly, arms close to the body.\nBackground: plain light grey, soft even studio light, no ground shadow, no text, whole character centred with margin.",
+  "source": "/Users/sadman/.codex/generated_images/01a1dc15-6209-7861-8249-12a7ff87b1d2/exec-127d26eb-02bf-4a37-baf4-ece8aa1f190a.png",
+  "size": [
+    1199,
+    1312
+  ],
+  "seconds": 102,
+  "date": "2026-11-14"
+}
