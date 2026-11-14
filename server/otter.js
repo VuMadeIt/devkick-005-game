@@ -115,7 +115,19 @@ async function askOtter(client, npc, history, said, trust, turn, ears) {
     messages: [{ role: 'user', content: transcript(history, said, trust, turn, ears) }],
   });
   if (response.stop_reason === 'refusal') {
-    return { reply: "Och, let's no go there. Tell us whit ye're up tae the day?", mood: 'ok', action: 'none', trust_delta: 0, sounded_local: false, hint: '', echo: '' };
+    return {
+      reply: "Och, let's no go there. Tell us whit ye're up tae the day?",
+      mood: 'ok',
+      action: 'none',
+      trust_delta: 0,
+      sounded_local: false,
+      hint: '',
+      echo: '',
+      suggestions: [
+        { say: "Ah'm just oot fur a wee wander", means: "I'm just out for a little walk" },
+        { say: 'Gaun fur a fish supper, pal', means: 'Going for fish and chips, mate' },
+      ],
+    };
   }
   const text = response.content.find((b) => b.type === 'text')?.text;
   if (!text) throw new HttpError(502, `The otter gave no text (stop_reason ${response.stop_reason})`);
@@ -211,6 +223,7 @@ export async function handleOtter(body, env) {
     mood: turnOut.mood,
     action: turnOut.action,
     hint: turnOut.hint,
+    suggestions: (turnOut.suggestions || []).slice(0, 2),
     soundedLocal: turnOut.sounded_local,
     trust: newTrust,
     delta: newTrust - trust,

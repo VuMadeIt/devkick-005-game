@@ -318,6 +318,32 @@ function showCast() {
   popIn($('cast').querySelector('.popup'));
 }
 
+// ---- Free talk: "Try saying" cards, written fresh by the character each turn (say + what it means)
+function showSuggestions(list) {
+  const box = $('suggest');
+  box.innerHTML = '';
+  const items = (list || []).filter((s) => s?.say);
+  if (!items.length || mode !== 'chat') {
+    box.classList.remove('show');
+    return;
+  }
+  const head = document.createElement('div');
+  head.className = 'suggest-head';
+  head.textContent = 'Try saying';
+  box.appendChild(head);
+  for (const s of items.slice(0, 2)) {
+    const card = document.createElement('div');
+    card.className = 'suggest-card';
+    const say = document.createElement('b');
+    say.textContent = `“${s.say}”`;
+    const means = document.createElement('span');
+    means.textContent = s.means;
+    card.append(say, means);
+    box.appendChild(card);
+  }
+  box.classList.add('show');
+}
+
 function readyToTalk(note) {
   if (note !== undefined) $('heard').textContent = note;
   busy = false;
@@ -355,6 +381,7 @@ async function startChat(id = npc.id) {
     const hello = await askOtter(chat, { npc: npc.id, opening: true }, { timeoutMs: 12000 }).catch(() => null);
     lastOtterLine = hello ? lineFrom(hello) : { text: npc.greeting, audio: null };
     if (hello) chat = { ...chat, history: [{ who: 'otter', text: hello.reply }] };
+    showSuggestions(hello?.suggestions);
   }
   await otterSays(lastOtterLine, 'suspicious');
   readyToTalk();
@@ -364,6 +391,7 @@ async function startChat(id = npc.id) {
 async function chatTurn(blob) {
   if (!blob || blob.size < MIN_ANSWER_BYTES) return readyToTalk('Hold the button down while you talk.');
   $('heard').textContent = 'You: …';
+  showSuggestions(null);
   setTalk(false, `${npc.short} is thinking...`);
   const echo = pendingEcho;
   // Their ears: your voice against their own last line (rough), and against the say-it-back phrase.
@@ -413,6 +441,7 @@ async function chatTurn(blob) {
   pendingEcho = answer.echo ? { text: answer.echo, audio: answer.echoAudio ? `data:audio/mpeg;base64,${answer.echoAudio}` : null } : null;
   $('tip').textContent = answer.hint ? `Tip: ${answer.hint}` : '';
   showChatPanel();
+  showSuggestions(answer.suggestions);
   lastOtterLine = lineFrom(answer);
   const speaking = otterSays(lastOtterLine, answer.mood);
   stage.act(answer.action);
@@ -450,6 +479,7 @@ async function finishChat(outcome) {
 
 async function startTest() {
   mode = 'test';
+  showSuggestions(null);
   primeMic();
   $('again').textContent = 'Try again';
   $('scots').classList.remove('show');
