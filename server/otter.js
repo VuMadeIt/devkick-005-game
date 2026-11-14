@@ -133,7 +133,7 @@ async function voice(line, key, voiceId) {
 }
 
 // ElevenLabs Scribe: the player's recorded answer -> text.
-async function transcribe(base64, type, key) {
+export async function transcribe(base64, type, key) {
   const mime = type || 'audio/webm';
   const ext = mime.includes('mp4') ? 'm4a' : mime.includes('ogg') ? 'ogg' : 'webm';
   const form = new FormData();
@@ -226,7 +226,7 @@ export async function handleOtter(body, env) {
 }
 
 // Minimal Node (req, res) adapter used by both the dev server and Vercel.
-export async function nodeHandler(req, res, env) {
+export async function nodeHandler(req, res, env, handler = handleOtter) {
   const send = (status, data) => {
     res.statusCode = status;
     res.setHeader('content-type', 'application/json');
@@ -246,10 +246,20 @@ export async function nodeHandler(req, res, env) {
       const raw = Buffer.concat(chunks).toString('utf8');
       body = raw ? JSON.parse(raw) : {};
     }
-    send(200, await handleOtter(body, env));
+    send(200, await handler(body, env));
   } catch (err) {
     const status = err instanceof HttpError ? err.status : err instanceof SyntaxError ? 400 : 500;
     console.error('[otter]', status, err.message);
     send(status, { error: status >= 500 ? 'The otter is having a wee moment. Try again.' : err.message });
   }
+}
+
+// POST /api/stt: { audio (base64), audioType } -> { text }. The lesson's backup ears: Chrome's built-in
+// recognition drops short Scots words like "aye"; ElevenLabs Scribe hears them.
+export async function handleStt(body, env) {
+  const audio = typeof body?.audio === 'string' ? body.audio : '';
+  if (!audio) throw new HttpError(400, 'audio is required');
+  if (audio.length > MAX_AUDIO_B64) throw new HttpError(413, 'Recording too long');
+  if (!env.ELEVENLABS_API_KEY) throw new HttpError(500, 'ELEVENLABS_API_KEY is needed to transcribe audio');
+  return { text: await transcribe(audio, String(body.audioType || ''), env.ELEVENLABS_API_KEY) };
 }
