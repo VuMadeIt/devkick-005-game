@@ -1,0 +1,28 @@
+# Voice (lane 2 owns this folder)
+
+## The contract (don't change the shape; lane 1 depends on it)
+```js
+import { listen, isSupported } from './voice/index.js';
+
+const session = listen({
+  expected: ['it\'s a braw day', ...], // accepted transcripts, lowercase
+  referenceUrl: 'assets/audio/scotland/braw.mp3', // the otter's clip, may be missing
+});
+// call session.stop() when the player releases the talk button
+const result = await session.result;
+// result = { transcript, wordScore, accentScore, score, pitch: { you: number[], ref: number[] } }
+// every score is 0..1. accentScore is null if it couldn't be measured. score = the one to use.
+```
+
+## What's there now (working fallback)
+- Browser speech recognition (Chrome's `webkitSpeechRecognition`) for the transcript.
+- `wordScore` = best fuzzy match of the transcript against `expected`.
+- `accentScore` = null, `score` = wordScore.
+
+## What lane 2 adds
+1. Record the mic with `getUserMedia` + Web Audio while recognition runs.
+2. Pitch per ~10 ms frame (autocorrelation/YIN) + loudness; same for the reference clip (decode with `AudioContext.decodeAudioData`).
+3. Normalise pitch (semitones relative to each speaker's median), compare contours with DTW -> `accentScore`.
+4. `score = 0.5 * wordScore + 0.5 * accentScore` (when accentScore exists). Be generous: judges should feel good.
+5. Return both contours in `pitch` so the UI can draw "your melody vs. the otter's".
+6. Unit tests for the DTW and pitch functions in `tests/voice*.test.js` (pure functions, no mic).

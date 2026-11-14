@@ -1,0 +1,60 @@
+{
+  "id": "scotland",
+  "name": "Scotland",
+  "character": {
+    "name": "Morag the Otter",
+    "model": "assets/models/otter.glb",
+    "intro": { "text": "Ye're no fae roon here, are ye? Prove it.", "audio": "assets/audio/scotland/intro.mp3" },
+    "outro": { "text": "Right then. Let's see where ye stand.", "audio": "assets/audio/scotland/outro.mp3" }
+  },
+  "test": [
+    {
+      "id": "aye",
+      "level": "easy",
+      "line": "Aye.",
+      "meaning": "Yes.",
+      "accepted": ["aye", "i", "eye", "ay"],
+      "audio": "assets/audio/scotland/aye.mp3",
+      "tip": "Short and confident: \"aye\" rhymes with \"eye\".",
+      "reactions": {
+        "good": { "text": "Aye, no bad!", "audio": "assets/audio/scotland/aye-good.mp3" },
+        "ok": { "text": "Hmm. A wee bit shy.", "audio": "assets/audio/scotland/aye-ok.mp3" },
+        "bad": { "text": "Was that a question?", "audio": "assets/audio/scotland/aye-bad.mp3" }
+      }
+    },
+    {
+      "id": "braw",
+      "level": "medium",
+      "line": "It's a braw day.",
+      "meaning": "It's a lovely day.",
+      "accepted": ["it's a braw day", "its a braw day", "it's a bra day", "it's a brow day", "braw day"],
+      "audio": "assets/audio/scotland/braw.mp3",
+      "tip": "Tap the R in \"braw\" with the tip of your tongue.",
+      "reactions": {
+        "good": { "text": "Braw indeed! Ye've been here before.", "audio": "assets/audio/scotland/braw-good.mp3" },
+        "ok": { "text": "Close. Gie that R a wee roll.", "audio": "assets/audio/scotland/braw-ok.mp3" },
+        "bad": { "text": "Ye sound like a tourist on a bus tour.", "audio": "assets/audio/scotland/braw-bad.mp3" }
+      }
+    },
+    {
+      "id": "dinnae",
+      "level": "hard",
+      "line": "Ah dinnae ken whit ye're oan aboot.",
+      "meaning": "I don't know what you're on about.",
+      "accepted": ["ah dinnae ken whit ye're oan aboot", "i dinnae ken what you're on about", "a dinny ken what you're on about", "dinnae ken"],
+      "audio": "assets/audio/scotland/dinnae.mp3",
+      "tip": "\"Aboot\" not \"about\": round your lips on the \"oo\".",
+      "reactions": {
+        "good": { "text": "Och, ye're a local! Who knew?", "audio": "assets/audio/scotland/dinnae-good.mp3" },
+        "ok": { "text": "Getting there. Mind the \"aboot\".", "audio": "assets/audio/scotland/dinnae-ok.mp3" },
+        "bad": { "text": "I dinnae ken what YOU were on aboot!", "audio": "assets/audio/scotland/dinnae-bad.mp3" }
+      }
+    }
+  ],
+  "path": [
+    { "id": "tourist", "name": "Tourist", "minScore": 0 },
+    { "id": "visitor", "name": "Visitor", "minScore": 0.35 },
+    { "id": "neighbour", "name": "Neighbour", "minScore": 0.6 },
+    { "id": "local", "name": "Local", "minScore": 0.8 }
+  ]
+}
