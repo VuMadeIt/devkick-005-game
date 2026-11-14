@@ -5,10 +5,32 @@ import { createStage } from './game/otterScene.js';
 import { say, sfx, setMuted, isMuted, unlockAudio, startBed, setBed } from './game/audio.js';
 import { band, clampTrust, placement, trustDelta } from './game/placement.js';
 import { listen, isSupported } from './voice/index.js';
+import { createLive } from './game/liveVoice.js';
 
 const $ = (id) => document.getElementById(id);
 const stage = createStage($('stage'));
 const place = scotland;
+const live = createLive($('live'), $('ring'), $('match'));
+let lastLean = 0;
+live.onVoice((voiced) => {
+  $('talk').classList.toggle('voiced', voiced);
+  // the otter leans in and tilts its head while you're making sound
+  const now = performance.now();
+  if (voiced && now - lastLean > 1400) {
+    lastLean = now;
+    stage.react('ok');
+  }
+});
+
+function floatPop(text, kind = '', delay = 0) {
+  setTimeout(() => {
+    const el = document.createElement('span');
+    el.textContent = text;
+    el.className = kind;
+    $('pops').appendChild(el);
+    setTimeout(() => el.remove(), 1500);
+  }, delay);
+}
 
 function show(id) {
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === id));
@@ -56,6 +78,8 @@ let index = 0;
 let trust = 30;
 let scores = [];
 let busy = false;
+let streak = 0;
+let attempt = 0;
 
 function setTrust(v) {
   trust = clampTrust(v);
@@ -73,12 +97,15 @@ function showItem(i) {
   $('heard').textContent = '';
   $('tip').textContent = '';
   $('melody').classList.remove('show');
+  attempt = 0;
+  live.show(item.audio);
   popIn($('prompt'));
 }
 
 async function startTest() {
   index = 0;
   scores = [];
+  streak = 0;
   setTrust(30);
   show('test');
   busy = true;
@@ -98,9 +125,21 @@ async function presentItem() {
   setTalk(true, 'Hold to talk');
 }
 
+async function replayLine() {
+  if (busy || session) return;
+  const item = place.test[index];
+  sfx('tap');
+  busy = true;
+  setTalk(false, 'Listen...');
+  await otterSays({ text: `"${item.line}"`, audio: item.audio ? item.audio : null });
+  busy = false;
+  setTalk(true, attempt ? 'Try again' : 'Hold to talk');
+}
+
 function setTalk(enabled, label) {
   const b = $('talk');
   b.disabled = !enabled;
+  $('again-line').disabled = !enabled;
   $('talk-label').textContent = label;
 }
 
@@ -115,6 +154,7 @@ function beginTalk() {
   $('talk-label').textContent = 'Listening...';
   $('heard').textContent = '';
   stage.react('idle');
+  live.start();
   session = listen({ expected: item.accepted.concat(item.line), referenceUrl: item.audio });
 }
 
@@ -122,7 +162,8 @@ async function endTalk() {
   if (!session) return;
   const s = session;
   session = null;
-  $('talk').classList.remove('recording');
+  $('talk').classList.remove('recording', 'voiced');
+  live.stop();
   busy = true;
   setTalk(false, 'Hmm...');
   s.stop();
@@ -147,14 +188,24 @@ async function judge(r) {
     return;
   }
   const score = r.score;
-  scores.push(score);
   const b = band(score);
-  $('heard').textContent = `Heard: "${r.transcript}"`;
-  drawMelody(r.pitch);
+  $('heard').textContent = `Heard: "${r.transcript}"  ·  ${Math.round(score * 100)}%`;
   if (b !== 'good') $('tip').textContent = `Tip: ${item.tip}`;
   sfx(b);
-  setTrust(trust + trustDelta(score));
+  const d = trustDelta(score);
+  setTrust(trust + d);
+  floatPop(`${d >= 0 ? '+' : ''}${d} trust`, b === 'bad' ? 'bad' : b === 'good' ? 'good' : '');
+  streak = b === 'good' ? streak + 1 : 0;
+  if (streak >= 2) floatPop(`Streak x${streak}!`, 'streak', 250);
   await otterSays(item.reactions[b], b);
+  // a bad first go gets one more try: the otter waits for you to have another go
+  if (b === 'bad' && attempt === 0) {
+    attempt = 1;
+    busy = false;
+    setTalk(true, 'Try again');
+    return;
+  }
+  scores.push(score);
   await new Promise((res) => setTimeout(res, 700));
   index += 1;
   if (index < place.test.length) {
@@ -206,6 +257,7 @@ document.querySelector('.pin.live').addEventListener('click', () => {
   }
   startTest();
 });
+$('again-line').addEventListener('click', replayLine);
 $('again').addEventListener('click', () => {
   sfx('tap');
   startTest();
