@@ -13,6 +13,12 @@ const VOICES = {
   hamish: 'KnVW5icoKhKlU7DbTW8i', // Big Hamish (Glasgow bus driver)
 };
 const voiceFor = (npc, env) => env[`VOICE_${npc.toUpperCase()}`] || VOICES[npc] || VOICES.otter;
+// Senga's and Hamish's voices live on Sadman's ElevenLabs account; the otter's on the account behind
+// ELEVENLABS_API_KEY. ELEVENLABS_NPC_API_KEY (Sadman's) voices the NPCs when it's set.
+const keyFor = (npc, env) => (npc !== 'otter' && env.ELEVENLABS_NPC_API_KEY) || env.ELEVENLABS_API_KEY;
+// If a voice isn't on the key's account, fall back to a standard ElevenLabs voice (on every account)
+// rather than the browser's robot voice.
+const STANDARD = { senga: 'Xb7hH8MSUJpSbSDYk0k2', hamish: 'JBFqnCBsd6RMkjVDRZzb', otter: 'JBFqnCBsd6RMkjVDRZzb' };
 const TTS_MODEL = 'eleven_v3';
 const MAX_TURNS = 8;
 const START_TRUST = 30;
@@ -187,10 +193,14 @@ export async function handleOtter(body, env) {
     try {
       // The reply and the "say it back" phrase are voiced at the same time; the phrase clip is what
       // the player's attempt gets compared with.
-      [audio, echoAudio] = await Promise.all([
-        voice(turnOut.reply, env.ELEVENLABS_API_KEY, voiceId),
-        turnOut.echo ? voice(turnOut.echo, env.ELEVENLABS_API_KEY, voiceId).catch(() => null) : null,
-      ]);
+      const key = keyFor(npc, env);
+      const speak = (text) =>
+        voice(text, key, voiceId).catch((err) => {
+          if (!/voice_not_found/.test(err.message)) throw err;
+          console.warn(`[otter] voice ${voiceId} not on this ElevenLabs account, using a standard voice`);
+          return voice(text, key, STANDARD[npc] ?? STANDARD.otter);
+        });
+      [audio, echoAudio] = await Promise.all([speak(turnOut.reply), turnOut.echo ? speak(turnOut.echo).catch(() => null) : null]);
     } catch (err) {
       console.error('[otter] TTS failed, client will use the browser voice:', err.message);
     }
