@@ -1,0 +1,9 @@
+Turn the attached mascot (an orange cartoon otter with a white muzzle, black outlines) into a reference image for an image-to-3D tool.
+
+Show the SAME character, same proportions, colours and friendly face, as a LOW-POLY 3D game character render:
+- standing upright on two legs, full body, facing straight at the camera, arms held slightly out from the body (A-pose), tail visible behind one leg
+- chunky, cute, simple faceted low-poly shapes with flat colours (orange body, darker orange shading, white muzzle and belly patch, black eyes and nose)
+- wearing a blue-and-green tartan flat cap and a matching small tartan scarf (he lives in Glasgow)
+- no laptop, no props, nothing in the hands
+- plain light grey background, soft even studio lighting, no shadows on the ground, no text, no logo
+- the whole character fits in frame with a margin, centred

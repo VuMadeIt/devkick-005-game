@@ -129,10 +129,38 @@ export function createStage(container) {
       model.position.y -= box.min.y;
       otter.clear();
       otter.add(model);
+      // Meshy animations: match clips by name so any naming works (idle, talk, cheer/happy, angry/sad...)
+      if (gltf.animations?.length) {
+        mixer = new THREE.AnimationMixer(model);
+        const find = (...words) =>
+          gltf.animations.find((c) => words.some((w) => c.name.toLowerCase().includes(w)));
+        const idle = find('idle', 'stand', 'breath') || gltf.animations[0];
+        clips = {
+          idle,
+          talk: find('talk', 'speak', 'gesture', 'explain') || idle,
+          good: find('cheer', 'happy', 'clap', 'jump', 'dance', 'victory') || idle,
+          ok: find('think', 'shrug', 'nod', 'look') || idle,
+          bad: find('angry', 'sad', 'disappoint', 'shake', 'no') || idle,
+          suspicious: find('suspicious', 'angry', 'look', 'think') || idle,
+        };
+        playClip('idle');
+      }
     },
     undefined,
     () => {},
   );
+
+  let mixer = null;
+  let clips = null;
+  let current = null;
+  function playClip(name) {
+    if (!mixer || !clips?.[name]) return;
+    const next = mixer.clipAction(clips[name]);
+    if (current === next) return;
+    next.reset().fadeIn(0.2).play();
+    current?.fadeOut(0.2);
+    current = next;
+  }
 
   // Reactions: 'idle' | 'talk' | 'good' | 'ok' | 'bad' | 'suspicious'
   let mood = 'idle';
@@ -141,6 +169,7 @@ export function createStage(container) {
   const react = (m) => {
     mood = m;
     moodT = 0;
+    playClip(m);
   };
 
   window.addEventListener('resize', () => {
@@ -151,6 +180,7 @@ export function createStage(container) {
 
   createLoop({
     update(dt) {
+      mixer?.update(dt);
       t += dt;
       moodT += dt;
       let y = Math.sin(t * 2) * 0.03;
