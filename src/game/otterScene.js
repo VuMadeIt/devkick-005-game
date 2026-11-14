@@ -173,14 +173,14 @@ export function createStage(container) {
         mixer = new THREE.AnimationMixer(model);
         const find = (...words) =>
           gltf.animations.find((c) => words.some((w) => c.name.toLowerCase().includes(w)));
-        const idle = find('idle', 'stand', 'breath') || gltf.animations[0];
+        // Meshy clips -> reactions (talking while it speaks; cheer / shrug / annoyed after an answer)
         clips = {
-          idle,
-          talk: find('talk', 'speak', 'gesture', 'explain') || idle,
-          good: find('cheer', 'happy', 'clap', 'jump', 'dance', 'victory') || idle,
-          ok: find('think', 'shrug', 'nod', 'look') || idle,
-          bad: find('angry', 'sad', 'disappoint', 'shake', 'no') || idle,
-          suspicious: find('suspicious', 'angry', 'look', 'think') || idle,
+          idle: find('idle', 'breath') || null,
+          talk: find('talk_with_hands', 'talk', 'speak', 'gesture'),
+          good: find('cheer', 'happy', 'clap', 'victory', 'dance'),
+          ok: find('shrug', 'think', 'nod'),
+          bad: find('angry', 'disappoint', 'sad', 'no'),
+          suspicious: find('angry', 'suspicious', 'look'),
         };
         playClip('idle');
       }
@@ -193,11 +193,22 @@ export function createStage(container) {
   let clips = null;
   let current = null;
   function playClip(name) {
-    if (!mixer || !clips?.[name]) return;
-    const next = mixer.clipAction(clips[name]);
-    if (current === next) return;
-    next.reset().fadeIn(0.2).play();
-    current?.fadeOut(0.2);
+    if (!mixer) return;
+    const clip = clips?.[name];
+    if (!clip) {
+      // back to the rest pose (procedural idle bob keeps it alive)
+      current?.fadeOut(0.3);
+      current = null;
+      return;
+    }
+    const next = mixer.clipAction(clip);
+    if (current === next && next.isRunning()) return;
+    next.reset();
+    // talking loops while the voice plays; reactions play once and hold their last pose briefly
+    next.setLoop(name === 'talk' ? THREE.LoopRepeat : THREE.LoopOnce, Infinity);
+    next.clampWhenFinished = name !== 'talk';
+    next.fadeIn(0.25).play();
+    current?.fadeOut(0.25);
     current = next;
   }
 
