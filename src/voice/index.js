@@ -32,6 +32,30 @@ async function record() {
     });
 }
 
+// Backup ears: send the recording to ElevenLabs (via /api/stt) when Chrome's recognition missed or
+// misheard the line. Short Scots words like "aye" are often dropped by Chrome.
+async function serverTranscript(blob) {
+  const buf = new Uint8Array(await blob.arrayBuffer());
+  let bin = '';
+  for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 7000);
+  try {
+    const res = await fetch('api/stt', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ audio: btoa(bin), audioType: blob.type }),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) return '';
+    return String((await res.json()).text || '');
+  } catch {
+    return '';
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export function listen({ expected = [], referenceUrl = null } = {}) {
   let stop = () => {};
   const result = new Promise((resolve) => {
@@ -54,9 +78,11 @@ export function listen({ expected = [], referenceUrl = null } = {}) {
           .catch(() => null)
       : null;
     // Any failure (no mic, missing or bad clip, too little voice) means null: words only.
+    let blobP = null;
+    const recording = () => (blobP ??= mic.then((stopMic) => stopMic?.()).catch(() => null));
     const measure = async () => {
       try {
-        const [blob, refAudio] = await Promise.all([mic.then((stopMic) => stopMic?.()), ref]);
+        const [blob, refAudio] = await Promise.all([recording(), ref]);
         return blob?.size && refAudio ? accent(await decode(await blob.arrayBuffer()), refAudio, SR) : null;
       } catch {
         return null;
@@ -65,8 +91,19 @@ export function listen({ expected = [], referenceUrl = null } = {}) {
     const finish = async (error) => {
       if (done) return;
       done = true;
-      const transcript = heard.join(' ').trim();
-      const ws = wordScore(transcript, expected);
+      let transcript = heard.join(' ').trim();
+      let ws = wordScore(transcript, expected);
+      if (ws < 0.75) {
+        const blob = await recording();
+        if (blob?.size > 1500) {
+          const backup = (await serverTranscript(blob)).replace(/[.,!?]+$/g, '').trim();
+          const bs = wordScore(backup, expected);
+          if (backup && (bs > ws || !transcript)) {
+            transcript = backup;
+            ws = bs;
+          }
+        }
+      }
       const m = await Promise.race([measure(), new Promise((res) => setTimeout(res, 1500, null))]);
       const accentScore = m?.accentScore ?? null;
       const score = accentScore === null ? ws : 0.5 * ws + 0.5 * accentScore;

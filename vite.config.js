@@ -10,6 +10,10 @@ function otterApi() {
       const { nodeHandler } = await import('./server/otter.js');
       await nodeHandler(req, res, env);
     });
+    server.middlewares.use('/api/stt', async (req, res) => {
+      const { nodeHandler, handleStt } = await import('./server/otter.js');
+      await nodeHandler(req, res, env, handleStt);
+    });
   };
   return {
     name: 'otter-api',
