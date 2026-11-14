@@ -1,0 +1,17 @@
+{
+  "_readme": "Settings for scripts/generate-voice.js. direction adds eleven_v3 audio tags in front of a line (keyed by the audio file name). Test lines have no tags: they are the reference the accent score compares against.",
+  "scotland": {
+    "voiceId": "9wOu10b6k3SOUgwDbKKv",
+    "voiceName": "Devin Otter (Glaswegian)",
+    "modelId": "eleven_v3",
+    "direction": {
+      "intro.mp3": "[suspicious]",
+      "aye-good.mp3": "[impressed]",
+      "aye-bad.mp3": "[confused]",
+      "braw-good.mp3": "[impressed]",
+      "braw-bad.mp3": "[teasing]",
+      "dinnae-good.mp3": "[delighted]",
+      "dinnae-bad.mp3": "[laughs]"
+    }
+  }
+}

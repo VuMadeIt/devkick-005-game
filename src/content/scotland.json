@@ -105,22 +105,38 @@
     {
       "id": "tourist",
       "name": "Tourist",
-      "minScore": 0
+      "minScore": 0,
+      "celebration": {
+        "text": "Och, ye're a wee tourist! Nae bother, we'll sort ye oot.",
+        "audio": "assets/audio/scotland/result-tourist.mp3"
+      }
     },
     {
       "id": "visitor",
       "name": "Visitor",
-      "minScore": 0.35
+      "minScore": 0.35,
+      "celebration": {
+        "text": "No bad at all, pal! Ye're a proper visitor noo.",
+        "audio": "assets/audio/scotland/result-visitor.mp3"
+      }
     },
     {
       "id": "neighbour",
       "name": "Neighbour",
-      "minScore": 0.6
+      "minScore": 0.6,
+      "celebration": {
+        "text": "Get in! Good job, mate! Ye could be ma neighbour!",
+        "audio": "assets/audio/scotland/result-neighbour.mp3"
+      }
     },
     {
       "id": "local",
       "name": "Local",
-      "minScore": 0.8
+      "minScore": 0.8,
+      "celebration": {
+        "text": "Ya dancer! Ye're a pure Glaswegian, so ye are!",
+        "audio": "assets/audio/scotland/result-local.mp3"
+      }
     }
   ],
   "setting": "Low-poly Glasgow street: sandstone tenements, wet cobbles, lamp posts, a chippy, a statue with a traffic cone on its head, drizzly grey sky."

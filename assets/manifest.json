@@ -1,7 +1,254 @@
 {
   "_readme": "Every generated asset goes here: what it is, the tool, the exact prompt, who made it, and the file. This is our proof for the Chroma tool awards (Meshy, ElevenLabs, Rosebud).",
   "models": [],
-  "audio": [],
+  "audio": [
+    {
+      "id": "scotland-intro",
+      "file": "public/assets/audio/scotland/intro.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3)",
+      "prompt": "[suspicious] Ye're no fae roon here, are ye? Prove it.",
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv), made with ElevenLabs Voice Design (eleven_ttv_v3): A thick, authentic working-class Glasgow, Scotland accent, strong and unmistakably Glaswegian, not generic British or Irish. Mid-30s, warm, cheeky and quick-talking, friendly and teasing but kind. Strong rolled Rs, broad Glaswegian vowels, lively upbeat energy, a fun character voice for an otter mascot in a game.",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-outro",
+      "file": "public/assets/audio/scotland/outro.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3)",
+      "prompt": "Right then. Let's see where ye stand.",
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv), made with ElevenLabs Voice Design (eleven_ttv_v3): A thick, authentic working-class Glasgow, Scotland accent, strong and unmistakably Glaswegian, not generic British or Irish. Mid-30s, warm, cheeky and quick-talking, friendly and teasing but kind. Strong rolled Rs, broad Glaswegian vowels, lively upbeat energy, a fun character voice for an otter mascot in a game.",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-aye",
+      "file": "public/assets/audio/scotland/aye.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3)",
+      "prompt": "Aye.",
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv), made with ElevenLabs Voice Design (eleven_ttv_v3): A thick, authentic working-class Glasgow, Scotland accent, strong and unmistakably Glaswegian, not generic British or Irish. Mid-30s, warm, cheeky and quick-talking, friendly and teasing but kind. Strong rolled Rs, broad Glaswegian vowels, lively upbeat energy, a fun character voice for an otter mascot in a game.",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-aye-good",
+      "file": "public/assets/audio/scotland/aye-good.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3)",
+      "prompt": "[impressed] Aye, no bad!",
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv), made with ElevenLabs Voice Design (eleven_ttv_v3): A thick, authentic working-class Glasgow, Scotland accent, strong and unmistakably Glaswegian, not generic British or Irish. Mid-30s, warm, cheeky and quick-talking, friendly and teasing but kind. Strong rolled Rs, broad Glaswegian vowels, lively upbeat energy, a fun character voice for an otter mascot in a game.",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-aye-ok",
+      "file": "public/assets/audio/scotland/aye-ok.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3)",
+      "prompt": "Hmm. A wee bit shy.",
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv), made with ElevenLabs Voice Design (eleven_ttv_v3): A thick, authentic working-class Glasgow, Scotland accent, strong and unmistakably Glaswegian, not generic British or Irish. Mid-30s, warm, cheeky and quick-talking, friendly and teasing but kind. Strong rolled Rs, broad Glaswegian vowels, lively upbeat energy, a fun character voice for an otter mascot in a game.",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-aye-bad",
+      "file": "public/assets/audio/scotland/aye-bad.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3)",
+      "prompt": "[confused] Was that a question?",
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv), made with ElevenLabs Voice Design (eleven_ttv_v3): A thick, authentic working-class Glasgow, Scotland accent, strong and unmistakably Glaswegian, not generic British or Irish. Mid-30s, warm, cheeky and quick-talking, friendly and teasing but kind. Strong rolled Rs, broad Glaswegian vowels, lively upbeat energy, a fun character voice for an otter mascot in a game.",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-braw",
+      "file": "public/assets/audio/scotland/braw.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3)",
+      "prompt": "It's a braw day.",
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv), made with ElevenLabs Voice Design (eleven_ttv_v3): A thick, authentic working-class Glasgow, Scotland accent, strong and unmistakably Glaswegian, not generic British or Irish. Mid-30s, warm, cheeky and quick-talking, friendly and teasing but kind. Strong rolled Rs, broad Glaswegian vowels, lively upbeat energy, a fun character voice for an otter mascot in a game.",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-braw-good",
+      "file": "public/assets/audio/scotland/braw-good.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3)",
+      "prompt": "[impressed] Braw indeed! Ye've been here before.",
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv), made with ElevenLabs Voice Design (eleven_ttv_v3): A thick, authentic working-class Glasgow, Scotland accent, strong and unmistakably Glaswegian, not generic British or Irish. Mid-30s, warm, cheeky and quick-talking, friendly and teasing but kind. Strong rolled Rs, broad Glaswegian vowels, lively upbeat energy, a fun character voice for an otter mascot in a game.",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-braw-ok",
+      "file": "public/assets/audio/scotland/braw-ok.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3)",
+      "prompt": "Close. Gie that R a wee roll.",
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv), made with ElevenLabs Voice Design (eleven_ttv_v3): A thick, authentic working-class Glasgow, Scotland accent, strong and unmistakably Glaswegian, not generic British or Irish. Mid-30s, warm, cheeky and quick-talking, friendly and teasing but kind. Strong rolled Rs, broad Glaswegian vowels, lively upbeat energy, a fun character voice for an otter mascot in a game.",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-braw-bad",
+      "file": "public/assets/audio/scotland/braw-bad.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3)",
+      "prompt": "[teasing] Ye sound like a tourist on a bus tour.",
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv), made with ElevenLabs Voice Design (eleven_ttv_v3): A thick, authentic working-class Glasgow, Scotland accent, strong and unmistakably Glaswegian, not generic British or Irish. Mid-30s, warm, cheeky and quick-talking, friendly and teasing but kind. Strong rolled Rs, broad Glaswegian vowels, lively upbeat energy, a fun character voice for an otter mascot in a game.",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-dinnae",
+      "file": "public/assets/audio/scotland/dinnae.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3)",
+      "prompt": "Ah dinnae ken whit ye're oan aboot.",
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv), made with ElevenLabs Voice Design (eleven_ttv_v3): A thick, authentic working-class Glasgow, Scotland accent, strong and unmistakably Glaswegian, not generic British or Irish. Mid-30s, warm, cheeky and quick-talking, friendly and teasing but kind. Strong rolled Rs, broad Glaswegian vowels, lively upbeat energy, a fun character voice for an otter mascot in a game.",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-dinnae-good",
+      "file": "public/assets/audio/scotland/dinnae-good.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3)",
+      "prompt": "[delighted] Och, ye're a local! Who knew?",
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv), made with ElevenLabs Voice Design (eleven_ttv_v3): A thick, authentic working-class Glasgow, Scotland accent, strong and unmistakably Glaswegian, not generic British or Irish. Mid-30s, warm, cheeky and quick-talking, friendly and teasing but kind. Strong rolled Rs, broad Glaswegian vowels, lively upbeat energy, a fun character voice for an otter mascot in a game.",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-dinnae-ok",
+      "file": "public/assets/audio/scotland/dinnae-ok.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3)",
+      "prompt": "Getting there. Mind the \"aboot\".",
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv), made with ElevenLabs Voice Design (eleven_ttv_v3): A thick, authentic working-class Glasgow, Scotland accent, strong and unmistakably Glaswegian, not generic British or Irish. Mid-30s, warm, cheeky and quick-talking, friendly and teasing but kind. Strong rolled Rs, broad Glaswegian vowels, lively upbeat energy, a fun character voice for an otter mascot in a game.",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-dinnae-bad",
+      "file": "public/assets/audio/scotland/dinnae-bad.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3)",
+      "prompt": "[laughs] I dinnae ken what YOU were on aboot!",
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv), made with ElevenLabs Voice Design (eleven_ttv_v3): A thick, authentic working-class Glasgow, Scotland accent, strong and unmistakably Glaswegian, not generic British or Irish. Mid-30s, warm, cheeky and quick-talking, friendly and teasing but kind. Strong rolled Rs, broad Glaswegian vowels, lively upbeat energy, a fun character voice for an otter mascot in a game.",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "sfx-tap",
+      "file": "public/assets/audio/sfx/tap.mp3",
+      "tool": "ElevenLabs Sound Effects",
+      "prompt": "Soft rounded UI button tap, short wooden pop, clean and friendly, very short",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "sfx-start",
+      "file": "public/assets/audio/sfx/start.mp3",
+      "tool": "ElevenLabs Sound Effects",
+      "prompt": "Short bright rising blip, microphone switching on, soft and friendly game UI cue",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "sfx-good",
+      "file": "public/assets/audio/sfx/good.mp3",
+      "tool": "ElevenLabs Sound Effects",
+      "prompt": "Cheerful correct-answer chime, three quick rising bell notes with a sparkle, bright and satisfying",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "sfx-ok",
+      "file": "public/assets/audio/sfx/ok.mp3",
+      "tool": "ElevenLabs Sound Effects",
+      "prompt": "Gentle neutral two-note marimba cue, soft and encouraging, short",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "sfx-bad",
+      "file": "public/assets/audio/sfx/bad.mp3",
+      "tool": "ElevenLabs Sound Effects",
+      "prompt": "Playful wrong-answer sound, soft descending cartoon bloop, funny not harsh, short",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "sfx-level",
+      "file": "public/assets/audio/sfx/level.mp3",
+      "tool": "ElevenLabs Sound Effects",
+      "prompt": "Level-up fanfare sting, quick ascending arpeggio on bright synth and glockenspiel ending in a shimmer, triumphant game reward",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "glasgow-ambience",
+      "file": "public/assets/audio/sfx/glasgow-ambience.mp3",
+      "tool": "ElevenLabs Sound Effects",
+      "prompt": "City street ambience in light rain, drizzle on wet cobblestones, a bus passing in the distance, seagulls calling, soft distant chatter of passers-by, seamless loop",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "music-glasgow",
+      "file": "public/assets/audio/music/glasgow.mp3",
+      "tool": "ElevenLabs Music (eleven_music_v2_5)",
+      "prompt": "30-second instrumental loop. Modern upbeat indie-folk groove with a light, catchy Scottish fiddle hook over acoustic guitar, warm bass and a crisp mid-tempo drum beat, around 110 BPM. Playful and warm, crisp modern production, not cheesy, no bagpipes, no vocals. Steady energy throughout so it loops seamlessly.",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "music-win",
+      "file": "public/assets/audio/music/win.mp3",
+      "tool": "ElevenLabs Music (eleven_music_v2_5)",
+      "prompt": "3-second instrumental victory sting. A bright, joyful Scottish fiddle flourish rising to a final chord with acoustic guitar strum and a cymbal swell, triumphant and warm, no vocals.",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-result-tourist",
+      "file": "public/assets/audio/scotland/result-tourist.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3) + ElevenLabs Music (eleven_music_v2_5), mixed with scripts/mix-celebration.sh (ffmpeg, the music ducks under the voice)",
+      "prompt": {
+        "voice": "[laughs] Och, ye're a wee tourist! Nae bother, we'll sort ye oot.",
+        "music": "5-second light, playful encouraging jingle, instrumental, no vocals. A cheeky plucked fiddle and ukulele-style acoustic guitar figure with a soft kick drum, warm and friendly, ending on a bright cheerful chord. Gentle, not triumphant."
+      },
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv)",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-result-visitor",
+      "file": "public/assets/audio/scotland/result-visitor.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3) + ElevenLabs Music (eleven_music_v2_5), mixed with scripts/mix-celebration.sh (ffmpeg, the music ducks under the voice)",
+      "prompt": {
+        "voice": "[cheerful] No bad at all, pal! Ye're a proper visitor noo.",
+        "music": "5-second upbeat happy celebration sting, instrumental, no vocals. A bouncy Scottish fiddle melody over strummed acoustic guitar, clapping and a light drum groove, rising to a bright major chord. Cheerful and warm, medium energy."
+      },
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv)",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-result-neighbour",
+      "file": "public/assets/audio/scotland/result-neighbour.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3) + ElevenLabs Music (eleven_music_v2_5), mixed with scripts/mix-celebration.sh (ffmpeg, the music ducks under the voice)",
+      "prompt": {
+        "voice": "[excited] Get in! Good job, mate! Ye could be ma neighbour!",
+        "music": "6-second big triumphant victory fanfare, instrumental, no vocals. Punchy drum hit, a fast joyful Scottish fiddle run, then the full band: brass stabs, strummed guitar, booming bass drum and crashing cymbals, landing on a huge sustained major chord. High energy, celebratory."
+      },
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv)",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-result-local",
+      "file": "public/assets/audio/scotland/result-local.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3) + ElevenLabs Music (eleven_music_v2_5), mixed with scripts/mix-celebration.sh (ffmpeg, the music ducks under the voice)",
+      "prompt": {
+        "voice": "[shouting] Ya dancer! [laughs] Ye're a pure Glaswegian, so ye are!",
+        "music": "7-second epic over-the-top Scottish victory anthem, instrumental, no vocals. Thundering marching snare roll and big bass drums, a soaring Highland pipe melody with fiddles and full brass, a cymbal crash and a massive final chord with a shimmering tail. Euphoric, stadium-sized, the ultimate win."
+      },
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv)",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    }
+  ],
   "images": [
     {
       "id": "otter-front-ref",
