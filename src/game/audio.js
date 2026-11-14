@@ -11,6 +11,7 @@ let muted = false;
 export function setMuted(m) {
   muted = m;
   if (m) speechSynthesis.cancel();
+  applyBed();
 }
 export const isMuted = () => muted;
 
@@ -66,9 +67,70 @@ export async function say(line, onStart) {
   await speakTts(line.text);
 }
 
-// Tiny synth SFX until lane 3's ElevenLabs sounds land.
+// ---- SFX: lane 3's ElevenLabs mp3s, decoded once; the synth below plays until (or if) they load.
+const SFX_DIR = 'assets/audio/sfx/';
+const SFX_KINDS = ['tap', 'start', 'good', 'ok', 'bad', 'level'];
+const SFX_VOLUME = 0.7;
+const sfxBuffers = new Map();
+
+async function loadSfx(kind) {
+  try {
+    const res = await fetch(`${SFX_DIR}${kind}.mp3`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    sfxBuffers.set(kind, await ac().decodeAudioData(await res.arrayBuffer()));
+  } catch (err) {
+    console.warn(`[audio] sfx "${kind}" unavailable, using synth:`, err.message);
+  }
+}
+
 export function sfx(kind) {
   if (muted) return;
+  const buffer = sfxBuffers.get(kind);
+  if (!buffer) return synthSfx(kind);
+  const c = ac();
+  const src = c.createBufferSource();
+  const gain = c.createGain();
+  src.buffer = buffer;
+  gain.gain.value = SFX_VOLUME;
+  src.connect(gain).connect(c.destination);
+  src.start();
+}
+
+// ---- Background bed: Glasgow music + street ambience, looping. Duck it under the otter and
+// turn it off while the player talks so it never leaks into the mic.
+const BED_TRACKS = [
+  { src: 'assets/audio/music/glasgow.mp3', volume: 0.3 },
+  { src: 'assets/audio/sfx/glasgow-ambience.mp3', volume: 0.2 },
+];
+const BED_LEVELS = { full: 1, under: 0.35, off: 0 };
+let bed = null;
+let bedLevel = 'full';
+
+function applyBed() {
+  for (const { el, volume } of bed ?? []) el.volume = muted ? 0 : volume * BED_LEVELS[bedLevel];
+}
+
+export function startBed() {
+  if (bed) return;
+  bed = BED_TRACKS.map(({ src, volume }) => {
+    const el = new Audio(src);
+    el.loop = true;
+    return { el, volume };
+  });
+  applyBed();
+  for (const { el } of bed) {
+    el.play().catch((err) => console.warn('[audio] background bed did not start:', err.message));
+  }
+}
+
+// level: 'full' | 'under' | 'off'
+export function setBed(level) {
+  bedLevel = level in BED_LEVELS ? level : 'full';
+  applyBed();
+}
+
+// Tiny synth fallback for when an mp3 is missing.
+function synthSfx(kind) {
   const c = ac();
   const t = c.currentTime;
   const notes = {
@@ -96,4 +158,5 @@ export function sfx(kind) {
 export function unlockAudio() {
   ac();
   speechSynthesis?.getVoices();
+  for (const kind of SFX_KINDS) if (!sfxBuffers.has(kind)) loadSfx(kind);
 }

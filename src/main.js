@@ -2,7 +2,7 @@
 import './ui/styles.css';
 import scotland from './content/scotland.json';
 import { createStage } from './game/otterScene.js';
-import { say, sfx, setMuted, isMuted, unlockAudio } from './game/audio.js';
+import { say, sfx, setMuted, isMuted, unlockAudio, startBed, setBed } from './game/audio.js';
 import { band, clampTrust, placement, trustDelta } from './game/placement.js';
 import { listen, isSupported } from './voice/index.js';
 
@@ -25,7 +25,9 @@ async function otterSays(line, mood = 'talk') {
   $('bubble-text').textContent = line.text;
   bubble.classList.add('show');
   stage.react(mood === 'talk' ? 'talk' : mood);
+  setBed('under');
   await say(line);
+  setBed('full');
   if (mood === 'talk') stage.react('idle');
 }
 
@@ -87,6 +89,7 @@ function beginTalk() {
   if (busy || session || $('talk').disabled) return;
   const item = place.test[index];
   sfx('start');
+  setBed('off');
   $('talk').classList.add('recording');
   $('talk-label').textContent = 'Listening...';
   $('heard').textContent = '';
@@ -103,6 +106,7 @@ async function endTalk() {
   setTalk(false, 'Hmm...');
   s.stop();
   const r = await s.result;
+  setBed('full');
   await judge(r);
 }
 
@@ -154,13 +158,21 @@ async function finish() {
   });
   $('bubble').classList.remove('show');
   show('result');
-  sfx('level');
   stage.react(p.index >= 2 ? 'good' : 'ok');
+  // The otter cheers over a victory sting sized to the level (lane 3); synth sting if it's missing.
+  if (p.level.celebration) {
+    setBed('off');
+    await say(p.level.celebration);
+    setBed('full');
+  } else {
+    sfx('level');
+  }
 }
 
 // ---- wiring
 $('play').addEventListener('click', () => {
   unlockAudio();
+  startBed();
   sfx('tap');
   show('map');
 });
