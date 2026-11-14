@@ -7,6 +7,8 @@ import { band, clampTrust, placement, trustDelta } from './game/placement.js';
 import { listen, isSupported } from './voice/index.js';
 import { createLive } from './game/liveVoice.js';
 import { createLessons } from './ui/lessons.js';
+import flowers from './content/flowers.json';
+import { turn } from './game/flowers.js';
 
 const $ = (id) => document.getElementById(id);
 const stage = createStage($('stage'));
@@ -138,6 +140,9 @@ function showItem(i) {
 }
 
 async function startTest() {
+  mode = 'test';
+  $('again-line').hidden = false;
+  $('speaker').textContent = place.character.name;
   index = 0;
   scores = [];
   streak = 0;
@@ -166,7 +171,7 @@ async function replayLine() {
   sfx('tap');
   busy = true;
   setTalk(false, 'Listen...');
-  await otterSays({ text: `"${item.line}"`, audio: item.audio ? item.audio : null });
+  await otterSays(mode === 'flowers' ? { text: $('bubble-text').textContent } : { text: `"${item.line}"`, audio: item.audio ? item.audio : null });
   busy = false;
   setTalk(true, attempt ? 'Try again' : 'Hold to talk');
 }
@@ -178,11 +183,73 @@ function setTalk(enabled, label) {
   $('talk-label').textContent = label;
 }
 
+// ---- free talk: sell Morag some flowers (src/content/flowers.json)
+let mode = 'test';
+let talkState = null;
+
+function showStep(stuck = false) {
+  const node = flowers.nodes[talkState.node];
+  $('step').textContent = 'Free talk';
+  $('level').textContent = flowers.name;
+  $('line').textContent = node.facts.join(' ');
+  $('meaning').textContent = flowers.intro;
+  $('tip').textContent = stuck ? `Tip: try "${node.hint}"` : '';
+  $('melody').classList.remove('show');
+  popIn($('prompt'));
+}
+
+async function startFlowers() {
+  mode = 'flowers';
+  talkState = { node: flowers.start, mood: flowers.mood, turns: 0 };
+  $('speaker').textContent = flowers.character.name;
+  live.hide();
+  setTrust(talkState.mood);
+  show('test');
+  showStep();
+  $('heard').textContent = '';
+  busy = true;
+  setTalk(false, 'Listen...');
+  await otterSays({ text: flowers.nodes[flowers.start].say }, 'suspicious');
+  busy = false;
+  setTalk(true, 'Hold to talk');
+}
+
+async function talkTurn(r) {
+  if (!r.transcript) {
+    $('heard').textContent = r.error === 'not-allowed' ? 'Allow the microphone to play.' : "Didn't catch that. Hold the button while you speak.";
+    busy = false;
+    setTalk(true, 'Try again');
+    return;
+  }
+  const before = talkState.mood;
+  const nodeBefore = talkState.node;
+  const t = turn(flowers, talkState, r.transcript);
+  talkState = t.state;
+  $('heard').textContent = `Heard: "${r.transcript}"`;
+  setTrust(t.state.mood);
+  const b = t.state.mood > before ? 'good' : t.state.mood < before ? 'bad' : 'ok';
+  sfx(b);
+  if (t.aside) await otterSays({ text: t.aside }, b);
+  await otterSays({ text: t.reply }, t.ending === 'buy' ? 'good' : t.ending === 'walk' ? 'bad' : 'talk');
+  if (!t.ending) {
+    showStep(t.state.node === nodeBefore);
+    busy = false;
+    setTalk(true, 'Hold to talk');
+    return;
+  }
+  $('result-level').textContent = t.ending === 'buy' ? 'Bought your flowers!' : 'Walked off';
+  $('result-score').textContent = String(t.state.mood);
+  $('result-note').textContent = t.ending === 'buy' ? 'Morag took ye for a local.' : 'Try sounding more local: aye, hen, wee, quid.';
+  $('bubble').classList.remove('show');
+  show('result');
+  stage.react(t.ending === 'buy' ? 'good' : 'ok');
+  sfx(t.ending === 'buy' ? 'level' : 'bad');
+}
+
 // ---- talking (hold Space or hold the button)
 let session = null;
 function beginTalk() {
   if (busy || session || $('talk').disabled) return;
-  const item = place.test[index];
   sfx('start');
   setBed('off');
   $('talk').classList.add('recording');
@@ -190,7 +257,9 @@ function beginTalk() {
   $('heard').textContent = '';
   stage.react('idle');
   live.start();
-  session = listen({ expected: item.accepted.concat(item.line), referenceUrl: item.audio });
+  if (mode === 'flowers') live.hide(); // no reference clip here: keep the mic ring, drop "Match %"
+  const item = place.test[index];
+  session = mode === 'flowers' ? listen() : listen({ expected: item.accepted.concat(item.line), referenceUrl: item.audio });
 }
 
 async function endTalk() {
@@ -204,7 +273,7 @@ async function endTalk() {
   s.stop();
   const r = await s.result;
   setBed('full');
-  await judge(r);
+  await (mode === 'flowers' ? talkTurn(r) : judge(r));
 }
 
 async function judge(r) {
@@ -283,9 +352,18 @@ document.querySelector('.pin.live').addEventListener('click', () => {
   startTest();
 });
 $('again-line').addEventListener('click', replayLine);
+$('pin-flowers').addEventListener('click', () => {
+  sfx('tap');
+  if (!isSupported()) {
+    alert('Please open this in Google Chrome so the game can hear you.');
+    return;
+  }
+  startFlowers();
+});
 $('again').addEventListener('click', () => {
   sfx('tap');
-  startTest();
+  if (mode === 'flowers') startFlowers();
+  else startTest();
 });
 $('to-map').addEventListener('click', () => {
   sfx('tap');

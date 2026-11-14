@@ -1,0 +1,70 @@
+{
+  "id": "flowers",
+  "name": "Flower stall, Buchanan Street",
+  "character": { "name": "Morag" },
+  "intro": "Sell Morag a bunch. Use the facts, say it your way, and sound local.",
+  "start": "greet",
+  "mood": 40,
+  "leaveAt": 10,
+  "buyAt": 55,
+  "localWords": ["aye", "hen", "wee", "braw", "pal", "awright", "a right", "right hand", "ken", "cannae", "dinnae", "naw", "pure", "quid", "quinn", "gonnae", "flooers", "hiya", "bonnie", "och", "gaun", "lassie", "ye", "gie's", "bra", "brow"],
+  "nodes": {
+    "greet": {
+      "say": "Whit? Ah'm in a hurry, so make it quick.",
+      "facts": ["Morag is rushing past your stall in the rain.", "Stop her with a friendly hello."],
+      "hint": "Awright hen, how's it gaun?",
+      "intents": [
+        { "words": ["hen", "pal", "awright", "a right", "right hand", "hiya"], "next": "offer", "mood": 8, "reply": "Aye, awright yersel. Whit is it?" },
+        { "words": ["rain", "weather", "wet", "dreich"], "next": "offer", "mood": 6, "reply": "Dreich, int it? Whit d'ye want, then?" },
+        { "words": ["alright", "all right", "hello", "hi", "hey", "how's it", "how are you", "morning", "excuse me", "sorry"], "next": "offer", "mood": 3 }
+      ]
+    },
+    "offer": {
+      "say": "Aye, fine. Whit is it ye want?",
+      "facts": ["Scottish heather and thistles.", "Picked this morning on the Campsie Fells."],
+      "hint": "Fancy some heather? Pure braw, picked the day.",
+      "intents": [
+        { "words": ["thistle", "thistles", "this all", "whistles"], "next": "price", "mood": 10, "reply": "Thistles? Ye cannae get mair Scottish than that. How much?" },
+        { "words": ["heather", "feather", "heath"], "next": "price", "mood": 8, "reply": "Heather, eh? Ma gran had heather by the door. How much?" },
+        { "words": ["campsie", "fells", "this morning", "the day", "picked", "fresh"], "next": "price", "mood": 6, "reply": "Fae the Campsies? Ah used tae walk up there. How much?" },
+        { "words": ["flower", "flowers", "sunflowers", "flooers", "roses", "bunch", "buy", "fancy", "sell"], "next": "price", "mood": 4, "reply": "Hmm. They're no bad. How much?" }
+      ]
+    },
+    "price": {
+      "say": "How much are ye wantin'?",
+      "facts": ["One bunch costs £5."],
+      "hint": "Five quid, hen. A wee bargain.",
+      "intents": [
+        { "words": ["10 quid", "10 pounds", "ten quid", "tenner", "20 quid", "20 pounds", "15 quid"], "next": "deal", "mood": -10, "reply": "Ten quid?! Are ye aff yer heid? Ah'll gie ye five." },
+        { "words": ["four", "4", "three", "3", "two", "2", "for you", "for quid", "for quit"], "next": "deal", "mood": 8, "reply": "Oh aye? That's no bad at aw. Why so cheap?" },
+        { "words": ["quid", "quit", "quinn", "queen", "pound", "pounds", "lb", "five", "5", "fiver", "bargain", "market", "cheap"], "next": "deal", "mood": 5, "reply": "Five quid? For they wee things?" }
+      ]
+    },
+    "deal": {
+      "say": "Gie's a reason, then.",
+      "facts": ["It's your last bunch of the day.", "Heather is meant to bring good luck."],
+      "hint": "Och, it's ma last bunch. Brings ye luck, so it does.",
+      "intents": [
+        { "words": ["luck", "lucky", "good luck"], "next": "end", "mood": 10 },
+        { "words": ["last", "last one", "last bunch", "only one"], "next": "end", "mood": 8 },
+        { "words": ["four", "4", "three", "3", "deal", "cheaper", "discount", "for you"], "next": "end", "mood": 8 },
+        { "words": ["fresh", "go on", "worth", "bonnie", "lovely", "today", "the day", "beautiful", "smell", "please"], "next": "end", "mood": 4 }
+      ]
+    }
+  },
+  "topics": [
+    { "words": ["london", "england", "english", "america", "american", "tourist", "holiday", "visiting", "on vacation"], "mood": -8, "reply": "Oh aye? A visitor, is it." },
+    { "words": ["glasgow", "glesga", "weegie", "irn bru", "iron brew", "buchanan", "clyde"], "mood": 8, "reply": "Ha! A Glesga yin!" },
+    { "words": ["gran", "grand", "granny", "maw", "mum", "mother", "wife", "girlfriend", "pal's"], "mood": 6, "reply": "Aw, that's nice, that." },
+    { "words": ["please", "thank you", "thanks", "cheers", "ta"], "mood": 3, "reply": "Manners an' aw." }
+  ],
+  "asides": {
+    "warm": ["Ha, no bad.", "Ye sound like ma cousin.", "Aye, that's mair like it."],
+    "cold": ["Hmph. Where are you fae?", "Ye talk like a guidebook.", "Mm. Ye're no fae roon here."],
+    "huh": ["Eh? Whit are ye on aboot?", "Speak sense, would ye?"]
+  },
+  "endings": {
+    "buy": "Go on then, gie's them. Ye've a proper Glesga tongue on ye.",
+    "walk": "Naw, ah'll leave it. Ah only buy aff ma ain folk. Cheerio."
+  }
+}
