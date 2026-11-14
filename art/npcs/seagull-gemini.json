@@ -1,0 +1,9 @@
+{
+  "engine": "Google Gemini app (gemini.google.com), Create image, Sadman's Google AI Plus account",
+  "model": "Gemini 4 Hydrogen (best unlocked option; the old 3.1 Pro choice no longer exists, 4 Argon is locked)",
+  "prompt_file": "art/npcs/seagull.prompt.txt (sent verbatim)",
+  "reference": "art/otter-scot-smooth.png",
+  "chat": "https://gemini.google.com/app/d7bfd6bfc34931f5",
+  "source": "Download full size (Gemini_Generated_Image_n7ly8jn7ly8jn7ly.jpeg), converted to PNG",
+  "date": "2026-11-14"
+}

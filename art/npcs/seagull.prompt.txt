@@ -1,0 +1,7 @@
+The reference image is the Devin Otter, the main character of our game. Make ONE new character reference image for an image-to-3D tool: a NEW character from the same game, in exactly the same style and proportions as the otter.
+
+Character: Morag the Glasgow seagull, who runs a fish-and-chip shop (a "chippy"). A chunky, round, plush-toy herring gull: soft white head and belly, pale grey wings folded like short arms, a big friendly yellow beak with a small red spot near the tip, round black eyes (same glossy style as the otter's), short orange legs and big soft orange webbed feet. She wears a white chippy apron with a tartan trim and a little paper chip-shop hat, and holds a wee cone of chips wrapped in paper in front of her belly with both wings. Sharp, cheeky, slightly suspicious expression: one eyebrow-feather raised.
+
+Style: identical to the reference otter: polished stylised 3D game character render (Pixar / modern mobile game quality), SMOOTH rounded forms, NOT low poly, no facets; soft short plush-like feather fuzz, fabric weave visible on the apron, cute and chunky like a plush toy, same head-to-body ratio as the otter, readable from far away.
+Pose: standing upright on two feet, full body, facing straight at the camera, symmetrical, the chip cone held in front of the belly, wings close to the body (not spread).
+Background: plain light grey, soft even studio light, no ground shadow, no text, whole character centred with margin.

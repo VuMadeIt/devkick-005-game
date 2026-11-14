@@ -4,6 +4,8 @@ import scotland from './content/scotland.json';
 import { createStage } from './game/otterScene.js';
 import { say, sfx, setMuted, isMuted, unlockAudio, startBed, setBed, setWarmth, chime } from './game/audio.js';
 import { SCOTS_WORDS, findScots } from './game/scotsWords.js';
+import { measureAccent } from './game/accentCheck.js';
+import cast from './content/cast.json';
 import { band, clampTrust, placement, trustDelta } from './game/placement.js';
 import { listen, isSupported } from './voice/index.js';
 import { createLive } from './game/liveVoice.js';
@@ -120,6 +122,10 @@ function drawMelody(pitch) {
 let mode = 'chat'; // 'chat': free talk with the otter (Claude + ElevenLabs); 'test': scripted accent test
 let chat = newChat();
 let lastOtterLine = null;
+// Free talk cast: who you're talking to, how each conversation ended, and a pending "say it back" phrase.
+let npc = cast.otter;
+const outcomes = {}; // id -> 'local' | 'busted' | 'out_of_time'
+let pendingEcho = null; // { text, audio }
 let index = 0;
 let trust = 30;
 let scores = [];
@@ -247,14 +253,52 @@ function showIntro() {
 
 function showChatPanel() {
   $('step').textContent = `Turn ${Math.min(chat.turn + 1, MAX_CHAT_TURNS)} / ${MAX_CHAT_TURNS}`;
-  $('level').textContent = 'Free talk';
-  $('line').textContent = 'Convince the otter you’re a real Glaswegian';
-  $('meaning').textContent = chat.turn
-    ? 'Say anything. Work in Scots words to win him over:'
-    : `Say anything. Try: “${CHAT_OPENERS[0]}”`;
-  $('scots').classList.add('show');
   $('melody').classList.remove('show');
+  $('scots').classList.add('show');
+  if (pendingEcho) {
+    // "Say it back": the phrase, its melody to sing along with, and Hear it again plays the phrase
+    $('level').textContent = `${npc.short} wants ye tae say it back`;
+    $('line').textContent = `“${pendingEcho.text}”`;
+    $('meaning').textContent = 'Copy the words AND the tune. Your accent counts double here.';
+    $('prompt').classList.add('echo');
+    live.show(pendingEcho.audio);
+    return;
+  }
+  $('prompt').classList.remove('echo');
+  $('level').textContent = `Free talk · ${npc.name}`;
+  $('line').textContent = npc.goal;
+  $('meaning').textContent = chat.turn
+    ? 'Say anything. Scots words and a local-sounding voice win them over:'
+    : npc.id === 'otter'
+      ? `Say anything. Try: “${CHAT_OPENERS[0]}”`
+      : 'Say anything. Sound like a local, or else:';
   live.hide();
+}
+
+// ---- the street: pick who to talk to
+function showCast() {
+  $('bubble').classList.remove('show');
+  stage.focus('otter');
+  stage.react('idle');
+  const wrap = $('cast-cards');
+  wrap.innerHTML = '';
+  for (const c of Object.values(cast)) {
+    const b = document.createElement('button');
+    const done = outcomes[c.id];
+    b.className = `cast-card ${done === 'local' ? 'won' : done ? 'lost' : ''}`;
+    b.innerHTML = `<img src="${c.card}" alt="" /><b></b><small></small><span class="badge"></span>`;
+    b.querySelector('b').textContent = c.name;
+    b.querySelector('small').textContent = c.role;
+    b.querySelector('.badge').textContent = done === 'local' ? 'Won' : done ? 'Try again' : 'Talk';
+    b.addEventListener('click', () => {
+      sfx('tap');
+      startChat(c.id);
+    });
+    b.addEventListener('pointerenter', () => stage.focus(c.id));
+    wrap.appendChild(b);
+  }
+  show('cast');
+  popIn($('cast').querySelector('.popup'));
 }
 
 function readyToTalk(note) {
@@ -263,10 +307,13 @@ function readyToTalk(note) {
   setTalk(true, 'Hold to talk');
 }
 
-async function startChat() {
+async function startChat(id = npc.id) {
   mode = 'chat';
+  npc = cast[id] ?? cast.otter;
+  pendingEcho = null;
   $('again-line').hidden = false;
-  $('speaker').textContent = place.character.name;
+  $('speaker').textContent = npc.name;
+  stage.focus(npc.id);
   chat = newChat();
   streak = 0;
   buildTray();
@@ -279,8 +326,18 @@ async function startChat() {
   $('tip').textContent = '';
   popIn($('prompt'));
   stage.react('suspicious');
-  await new Promise((res) => setTimeout(res, 700)); // a beat: he sizes you up before speaking
-  lastOtterLine = place.character.intro;
+  await new Promise((res) => setTimeout(res, 700)); // a beat: they size you up before speaking
+  if (npc.id === 'otter') {
+    lastOtterLine = place.character.intro;
+  } else {
+    // a fresh greeting in their own voice every time; the written one if the server is slow or down
+    $('bubble-text').textContent = '…';
+    $('bubble').classList.add('show');
+    setTalk(false, `${npc.short} is sizing ye up...`);
+    const hello = await askOtter(chat, { npc: npc.id, opening: true }, { timeoutMs: 12000 }).catch(() => null);
+    lastOtterLine = hello ? lineFrom(hello) : { text: npc.greeting, audio: null };
+    if (hello) chat = { ...chat, history: [{ who: 'otter', text: hello.reply }] };
+  }
   await otterSays(lastOtterLine, 'suspicious');
   readyToTalk();
 }
@@ -289,15 +346,27 @@ async function startChat() {
 async function chatTurn(blob) {
   if (!blob || blob.size < MIN_ANSWER_BYTES) return readyToTalk('Hold the button down while you talk.');
   $('heard').textContent = 'You: …';
-  setTalk(false, 'The otter is thinking...');
+  setTalk(false, `${npc.short} is thinking...`);
+  const echo = pendingEcho;
+  // Their ears: your voice against their own last line (rough), and against the say-it-back phrase.
+  const ears = Promise.all([
+    measureAccent(blob, lastOtterLine?.audio),
+    echo ? measureAccent(blob, echo.audio) : null,
+  ]);
   // Send first, then fill the wait with a thinking line while the answer is on its way.
-  const pending = blobToBase64(blob)
-    .then((audio) => askOtter(chat, { audio, audioType: blob.type }))
+  const pending = Promise.all([blobToBase64(blob), ears])
+    .then(([audio, [accent, echoAccent]]) =>
+      askOtter(chat, { audio, audioType: blob.type, npc: npc.id, accent, echoAccent, echo: echo?.text ?? '' }),
+    )
     .then(
       (value) => ({ value }),
       (error) => ({ error }),
     );
-  await otterSays(THINKING[Math.floor(Math.random() * THINKING.length)], 'suspicious');
+  if (npc.id === 'otter') await otterSays(THINKING[Math.floor(Math.random() * THINKING.length)], 'suspicious');
+  else {
+    $('bubble-text').textContent = 'Hmm…';
+    $('bubble').classList.add('show');
+  }
   stage.react('suspicious');
   const { value: answer, error } = await pending;
   if (error) {
@@ -306,7 +375,7 @@ async function chatTurn(blob) {
     return readyToTalk('');
   }
   const said = answer.heard || '';
-  $('heard').textContent = said ? `You: “${said}”` : 'The otter didn’t catch that...';
+  $('heard').textContent = said ? `You: “${said}”` : `${npc.short} didn’t catch that...`;
   const fresh = collectWords(said);
   if (fresh >= 2) floatPop(`Patter combo x${fresh}!`, 'streak', 400);
   chat = applyTurn(chat, said, answer);
@@ -316,6 +385,14 @@ async function chatTurn(blob) {
   floatPop(`${answer.delta >= 0 ? '+' : ''}${answer.delta} trust`, kind === 'ok' ? '' : kind);
   streak = kind === 'good' ? streak + 1 : 0;
   if (streak >= 2) floatPop(`Streak x${streak}!`, 'streak', 250);
+  // what their ears made of your accent
+  if (answer.echoScore !== null && answer.echoScore !== undefined) {
+    const pct = Math.round(answer.echoScore * 100);
+    floatPop(`Said it back: ${pct}%`, pct >= 60 ? 'good' : 'bad', 600);
+  } else if (answer.accentDelta) {
+    floatPop(answer.accentDelta > 0 ? `Sounds local +${answer.accentDelta}` : `Ye don't sound local ${answer.accentDelta}`, answer.accentDelta > 0 ? 'good' : 'bad', 600);
+  }
+  pendingEcho = answer.echo ? { text: answer.echo, audio: answer.echoAudio ? `data:audio/mpeg;base64,${answer.echoAudio}` : null } : null;
   $('tip').textContent = answer.hint ? `Tip: ${answer.hint}` : '';
   showChatPanel();
   lastOtterLine = lineFrom(answer);
@@ -333,9 +410,16 @@ async function chatTurn(blob) {
 async function finishChat(outcome) {
   const average = trust / 100;
   const p = placement([average], place.path);
+  outcomes[npc.id] = outcome === 'local' || (outcome === 'out_of_time' && trust >= 65) ? 'local' : outcome;
+  pendingEcho = null;
+  $('prompt').classList.remove('echo');
   $('bubble').classList.remove('show');
   showResult(average, p.level);
-  $('result-note').textContent = `${OUTCOME_NOTE[outcome] ?? ''} Scots words: ${collected.size} of ${SCOTS_WORDS.length}. ${$('result-note').textContent}`.trim();
+  const wins = Object.values(cast).filter((c) => outcomes[c.id] === 'local').length;
+  const note = outcome === 'local' ? npc.win : outcome === 'busted' ? npc.bust : OUTCOME_NOTE.out_of_time.replace('The otter', npc.short);
+  const legend = wins === Object.keys(cast).length ? ' LOCAL LEGEND: the whole street trusts ye!' : ` Locals won over: ${wins} of ${Object.keys(cast).length}.`;
+  $('result-note').textContent = `${note}${legend} Scots words: ${collected.size} of ${SCOTS_WORDS.length}.`;
+  $('again').textContent = 'Talk to someone else';
   stage.react(p.index >= 2 ? 'good' : 'ok');
   if (p.level.celebration) {
     setBed('off');
@@ -348,6 +432,7 @@ async function finishChat(outcome) {
 
 async function startTest() {
   mode = 'test';
+  $('again').textContent = 'Try again';
   $('scots').classList.remove('show');
   $('again-line').hidden = false;
   $('speaker').textContent = place.character.name;
@@ -376,11 +461,12 @@ async function presentItem() {
 async function replayLine() {
   if (busy || session) return;
   if (mode === 'chat') {
-    if (!lastOtterLine) return;
+    const line = pendingEcho ?? lastOtterLine;
+    if (!line) return;
     sfx('tap');
     busy = true;
     setTalk(false, 'Listen...');
-    await otterSays(lastOtterLine, 'talk');
+    await otterSays(line, 'talk');
     return readyToTalk();
   }
   const item = place.test[index];
@@ -415,6 +501,7 @@ function showStep(stuck = false) {
 
 async function startFlowers() {
   mode = 'flowers';
+  $('again').textContent = 'Try again';
   $('scots').classList.remove('show');
   talkState = { node: flowers.start, mood: flowers.mood, turns: 0 };
   $('speaker').textContent = flowers.character.name;
@@ -477,7 +564,8 @@ function beginTalk() {
     recording.catch(() => {}); // handled in endChatTalk
     session = { recording };
     startCaptions();
-    live.start().then(() => $('match').classList.remove('show')); // mic ring + otter leaning in
+    // mic ring + the character leaning in; on a say-it-back phrase, also your tune over theirs + Match %
+    live.start().then(() => !pendingEcho && $('match').classList.remove('show'));
     return;
   }
   live.start();
@@ -596,7 +684,11 @@ document.querySelector('.pin.live').addEventListener('click', () => {
 });
 $('intro-start').addEventListener('click', () => {
   sfx('tap');
-  startChat();
+  showCast();
+});
+$('cast-back').addEventListener('click', () => {
+  sfx('tap');
+  showIntro();
 });
 $('intro-test').addEventListener('click', () => {
   sfx('tap');
@@ -619,7 +711,7 @@ $('intro-flowers').addEventListener('click', () => {
 });
 $('again').addEventListener('click', () => {
   sfx('tap');
-  if (mode === 'chat') startChat();
+  if (mode === 'chat') showCast();
   else if (mode === 'flowers') startFlowers();
   else startTest();
 });

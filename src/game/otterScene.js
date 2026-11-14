@@ -5,7 +5,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { createLoop } from './loop.js';
-import { addExpressions } from './expressions.js';
+import { createActor } from './actor.js';
+import cast from '../content/cast.json';
 import { voiceLevel } from './audio.js';
 
 export function createStage(container) {
@@ -137,130 +138,32 @@ export function createStage(container) {
     () => {},
   );
 
-  // Placeholder otter built from primitives
-  const otter = new THREE.Group();
-  const fur = new THREE.MeshStandardMaterial({ color: '#7a5233', flatShading: true });
-  const belly = new THREE.MeshStandardMaterial({ color: '#d8b48a', flatShading: true });
-  const dark = new THREE.MeshStandardMaterial({ color: '#1d1410' });
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.45, 0.8, 6, 12), fur);
-  body.position.y = 0.9;
-  const front = new THREE.Mesh(new THREE.CapsuleGeometry(0.32, 0.55, 6, 12), belly);
-  front.position.set(0, 0.85, 0.2);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 12), fur);
-  head.position.y = 1.85;
-  const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), belly);
-  muzzle.position.set(0, 1.75, 0.34);
-  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), dark);
-  nose.position.set(0, 1.82, 0.55);
-  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), dark);
-  eyeL.position.set(-0.15, 1.95, 0.36);
-  const eyeR = eyeL.clone();
-  eyeR.position.x = 0.15;
-  const earL = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), fur);
-  earL.position.set(-0.32, 2.15, 0);
-  const earR = earL.clone();
-  earR.position.x = 0.32;
-  // tartan-ish bonnet
-  const hat = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.36, 0.42, 0.14, 16),
-    new THREE.MeshStandardMaterial({ color: '#2f5aa8', flatShading: true }),
-  );
-  hat.position.set(0, 2.25, 0);
-  const bobble = new THREE.Mesh(
-    new THREE.SphereGeometry(0.09, 8, 6),
-    new THREE.MeshStandardMaterial({ color: '#d33b3b' }),
-  );
-  bobble.position.set(0, 2.36, 0);
-  const tail = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.9, 8), fur);
-  tail.rotation.x = Math.PI / 2.4;
-  tail.position.set(0, 0.35, -0.6);
-  otter.add(body, front, head, muzzle, nose, eyeL, eyeR, earL, earR, hat, bobble, tail);
-  scene.add(otter);
-
-  // Swap in the Meshy otter when it exists
-  new GLTFLoader().load(
-    'assets/models/otter.glb',
-    (gltf) => {
-      const model = gltf.scene;
-      const box = new THREE.Box3().setFromObject(model);
-      const size = box.getSize(new THREE.Vector3());
-      const s = 2.3 / Math.max(size.y, 0.001);
-      model.scale.setScalar(s);
-      box.setFromObject(model);
-      model.position.y -= box.min.y;
-      otter.clear();
-      otter.add(model);
-      try {
-        face = addExpressions(model);
-      } catch (err) {
-        console.warn('[otter] no face expressions:', err.message);
-      }
-      // Meshy animations: match clips by name so any naming works (idle, talk, cheer/happy, angry/sad...)
-      if (gltf.animations?.length) {
-        mixer = new THREE.AnimationMixer(model);
-        const find = (...words) =>
-          gltf.animations.find((c) => words.some((w) => c.name.toLowerCase().includes(w)));
-        // Meshy clips -> reactions (talking while it speaks; cheer / shrug / annoyed after an answer)
-        clips = {
-          idle: find('idle', 'breath') || null,
-          talk: find('talk_with_hands', 'talk', 'speak', 'gesture'),
-          good: find('cheer', 'happy', 'clap', 'victory', 'dance'),
-          ok: find('shrug', 'think', 'nod'),
-          bad: find('angry', 'disappoint', 'sad', 'no'),
-          suspicious: find('angry', 'suspicious', 'look'),
-        };
-        mixer.addEventListener('finished', () => playClip('idle'));
-        playClip('idle');
-      }
-    },
-    undefined,
-    () => {},
-  );
-
-  let mixer = null;
-  let clips = null;
-  let current = null;
-  function playClip(name) {
-    if (!mixer) return;
-    const clip = clips?.[name];
-    if (!clip) {
-      // back to the rest pose (procedural idle bob keeps it alive)
-      current?.fadeOut(0.3);
-      current = null;
-      return;
+  // The cast: the Devin Otter in the middle, NPCs further down the street. Each swaps in its Meshy model.
+  const actors = Object.fromEntries(Object.values(cast).map((c) => [c.id, createActor(scene, c)]));
+  let focused = actors.otter;
+  // Camera spot in front of an actor: the otter's original framing, turned to match the actor's facing.
+  const CAM = new THREE.Vector3(0, 2.0, 5.4);
+  const LOOK = new THREE.Vector3(0, 1.45, -2);
+  const camGoal = new THREE.Vector3();
+  const lookGoal = new THREE.Vector3();
+  const lookNow = new THREE.Vector3();
+  const frame = (actor, instant) => {
+    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), actor.root.rotation.y);
+    camGoal.copy(CAM).applyQuaternion(q).add(actor.root.position);
+    lookGoal.copy(LOOK).applyQuaternion(q).add(actor.root.position);
+    if (instant) {
+      camera.position.copy(camGoal);
+      lookNow.copy(lookGoal);
+      camera.lookAt(lookNow);
     }
-    const next = mixer.clipAction(clip);
-    if (current === next && next.isRunning()) return;
-    next.reset();
-    // talking loops while the voice plays; reactions play once and hold their last pose briefly
-    const loops = name === 'talk' || name === 'idle';
-    next.setLoop(loops ? THREE.LoopRepeat : THREE.LoopOnce, Infinity);
-    next.clampWhenFinished = !loops;
-    next.fadeIn(0.25).play();
-    current?.fadeOut(0.25);
-    current = next;
-  }
-
-  // Reactions: 'idle' | 'talk' | 'good' | 'ok' | 'bad' | 'suspicious'
-  let mood = 'idle';
-  let moodT = 0;
-  let t = 0;
-  let face = null;
-  // Physical reactions from the free-talk otter (server 'action'): procedural moves on top of the mood.
-  let action = 'none';
-  let actionT = 0;
-  const act = (a) => {
-    action = a || 'none';
-    actionT = 0;
-    if (a === 'laugh') react('good');
-    if (a === 'cross_arms' || a === 'turn_away') react('suspicious');
   };
-  const react = (m) => {
-    face?.set(m);
-    mood = m;
-    moodT = 0;
-    playClip(m);
+  frame(focused, true);
+  const focus = (id) => {
+    focused = actors[id] ?? actors.otter;
+    frame(focused, false);
   };
+  const react = (m) => focused.react(m);
+  const act = (a) => focused.act(a);
 
   // On short screens (phones in landscape, small windows) the lesson card sits over the middle of the view,
   // so shift the picture up: the otter's face lands in the free space above the card.
@@ -278,47 +181,13 @@ export function createStage(container) {
 
   createLoop({
     update(dt) {
-      mixer?.update(dt);
-      face?.update(dt, voiceLevel());
       updateRain(dt);
       applyWeather(dt);
-      t += dt;
-      moodT += dt;
-      let y = Math.sin(t * 2) * 0.03;
-      let tilt = 0;
-      let squash = 1;
-      if (mood === 'talk') y += Math.abs(Math.sin(t * 14)) * 0.04;
-      if (mood === 'good') {
-        const k = Math.max(0, 1 - moodT * 1.6);
-        y += Math.abs(Math.sin(moodT * 10)) * 0.5 * k;
-        squash = 1 + Math.sin(moodT * 20) * 0.06 * k;
-      }
-      if (mood === 'ok') tilt = Math.sin(moodT * 3) * 0.12 * Math.max(0, 1 - moodT / 2);
-      if (mood === 'bad' || mood === 'suspicious') {
-        tilt = -0.18 * Math.min(1, moodT * 4);
-        otter.position.x = Math.sin(moodT * 30) * 0.04 * Math.max(0, 1 - moodT * 2);
-      } else otter.position.x *= 0.9;
-      otter.position.y = y;
-      otter.rotation.z = tilt;
-      otter.scale.set(1 / Math.sqrt(squash), squash, 1 / Math.sqrt(squash));
-      let turn = Math.sin(t * 0.6) * 0.12;
-      let lean = 0;
-      let forward = 0;
-      actionT += dt;
-      const fade = Math.max(0, 1 - Math.max(0, actionT - 1.6) / 0.6); // hold ~1.6 s, ease back
-      if (action === 'lean_in') {
-        lean = 0.22 * Math.min(1, actionT * 3) * fade;
-        forward = 0.35 * Math.min(1, actionT * 3) * fade;
-      }
-      if (action === 'laugh') otter.position.y += Math.abs(Math.sin(actionT * 16)) * 0.08 * fade;
-      if (action === 'turn_away') turn += 1.9 * Math.min(1, actionT * 2.5) * fade;
-      if (action === 'point_down_street') turn -= 0.9 * Math.min(1, actionT * 3) * fade;
-      if (action === 'wave_over_pal') tilt += Math.sin(actionT * 9) * 0.14 * fade;
-      if (action === 'cross_arms') lean = -0.12 * Math.min(1, actionT * 4) * fade;
-      otter.rotation.y = turn;
-      otter.rotation.x = lean;
-      otter.position.z = forward;
-      otter.rotation.z = tilt;
+      const voice = voiceLevel();
+      for (const a of Object.values(actors)) a.update(dt, a === focused ? voice : 0);
+      camera.position.lerp(camGoal, Math.min(1, dt * 2.5));
+      lookNow.lerp(lookGoal, Math.min(1, dt * 2.5));
+      camera.lookAt(lookNow);
     },
     render() {
       renderer.render(scene, camera);
@@ -332,6 +201,8 @@ export function createStage(container) {
       weatherGoal = Math.max(0, Math.min(1, k));
       if (instant) weather = weatherGoal;
     },
-    setVisible: (v) => (otter.visible = v),
+    focus,
+    actors,
+    setVisible: (v) => focused.setVisible(v),
   };
 }
