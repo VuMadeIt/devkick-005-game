@@ -563,3 +563,22 @@ body.reduce *, body.reduce *::before, body.reduce *::after { animation: none !im
 .intro-pop .howto { text-align: left; margin: 0 0 18px; padding-left: 22px; font-size: 16px; line-height: 1.45; }
 .intro-pop .howto li { margin-bottom: 6px; }
 @media (max-width: 600px) { .intro-pop .howto { font-size: 14px; } }
+
+/* Free talk: Scots words to collect. Grey until you say one, then it lights up gold. */
+.scots { display: none; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 6px auto 2px; max-width: 560px; }
+.scots.show { display: flex; }
+.scots::before {
+  content: attr(data-count); flex-basis: 100%; font-size: 12px; font-weight: 700; color: var(--blue-dark); opacity: 0.8;
+}
+.scots .word {
+  font: 600 14px 'Fredoka', sans-serif; color: #6b6458; background: #ebe4d6; border: 2px dashed #b9ae99;
+  border-radius: 999px; padding: 3px 11px; cursor: default;
+}
+.scots .word.got { color: var(--ink); background: var(--amber); border: 2px solid var(--ink); box-shadow: 0 2px 0 var(--ink); }
+.pops span.word { color: var(--amber); font-size: 26px; top: -30px; }
+@media (max-height: 450px) {
+  .scots { gap: 4px; margin: 3px auto 0; max-width: 640px; }
+  .scots::before { font-size: 11px; }
+  .scots .word { font-size: 12px; padding: 1px 8px; }
+}
+.live:not(.show) ~ .legend, .live:not(.show) ~ .match { display: none; }

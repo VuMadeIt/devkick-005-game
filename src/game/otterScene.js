@@ -43,9 +43,15 @@ export function createStage(container) {
   );
   rain.frustumCulled = false;
   scene.add(rain);
+  // Weather follows the otter's trust: 0 = dreich downpour, 1 = the sun breaks through over the tenements.
+  const GREY = new THREE.Color('#aab4be');
+  const BLUE = new THREE.Color('#a8d4f5');
+  let weather = 0.3;
+  let weatherGoal = 0.3;
+  let rainRate = 1;
   const updateRain = (dt) => {
     for (let i = 0; i < RAIN; i += 1) {
-      const dy = rainSpeed[i] * dt;
+      const dy = rainSpeed[i] * dt * rainRate;
       const o = i * 6;
       rainPos[o + 1] -= dy;
       rainPos[o + 4] -= dy;
@@ -61,6 +67,19 @@ export function createStage(container) {
 
   scene.add(new THREE.HemisphereLight('#f4f1ea', '#5d5a57', 1.7));
   const sun = new THREE.DirectionalLight('#fff1dc', 1.6);
+  const applyWeather = (dt) => {
+    weather += (weatherGoal - weather) * Math.min(1, dt * 1.2);
+    const k = weather;
+    rain.material.opacity = 0.75 * (1 - k) ** 1.4;
+    rain.visible = rain.material.opacity > 0.02;
+    rainRate = 1.15 - 0.4 * k;
+    scene.background.copy(GREY).lerp(BLUE, k);
+    scene.fog.color.copy(scene.background);
+    scene.fog.far = 70 + 60 * k;
+    sun.intensity = 1.2 + 1.6 * k;
+    sun.color.setHSL(0.1, 0.6 + 0.3 * k, 0.88 - 0.06 * k);
+    renderer.toneMappingExposure = 0.92 + 0.28 * k;
+  };
   sun.position.set(4, 8, 5);
   scene.add(sun);
 
@@ -227,6 +246,15 @@ export function createStage(container) {
   let moodT = 0;
   let t = 0;
   let face = null;
+  // Physical reactions from the free-talk otter (server 'action'): procedural moves on top of the mood.
+  let action = 'none';
+  let actionT = 0;
+  const act = (a) => {
+    action = a || 'none';
+    actionT = 0;
+    if (a === 'laugh') react('good');
+    if (a === 'cross_arms' || a === 'turn_away') react('suspicious');
+  };
   const react = (m) => {
     face?.set(m);
     mood = m;
@@ -253,6 +281,7 @@ export function createStage(container) {
       mixer?.update(dt);
       face?.update(dt, voiceLevel());
       updateRain(dt);
+      applyWeather(dt);
       t += dt;
       moodT += dt;
       let y = Math.sin(t * 2) * 0.03;
@@ -272,12 +301,37 @@ export function createStage(container) {
       otter.position.y = y;
       otter.rotation.z = tilt;
       otter.scale.set(1 / Math.sqrt(squash), squash, 1 / Math.sqrt(squash));
-      otter.rotation.y = Math.sin(t * 0.6) * 0.12;
+      let turn = Math.sin(t * 0.6) * 0.12;
+      let lean = 0;
+      let forward = 0;
+      actionT += dt;
+      const fade = Math.max(0, 1 - Math.max(0, actionT - 1.6) / 0.6); // hold ~1.6 s, ease back
+      if (action === 'lean_in') {
+        lean = 0.22 * Math.min(1, actionT * 3) * fade;
+        forward = 0.35 * Math.min(1, actionT * 3) * fade;
+      }
+      if (action === 'laugh') otter.position.y += Math.abs(Math.sin(actionT * 16)) * 0.08 * fade;
+      if (action === 'turn_away') turn += 1.9 * Math.min(1, actionT * 2.5) * fade;
+      if (action === 'point_down_street') turn -= 0.9 * Math.min(1, actionT * 3) * fade;
+      if (action === 'wave_over_pal') tilt += Math.sin(actionT * 9) * 0.14 * fade;
+      if (action === 'cross_arms') lean = -0.12 * Math.min(1, actionT * 4) * fade;
+      otter.rotation.y = turn;
+      otter.rotation.x = lean;
+      otter.position.z = forward;
+      otter.rotation.z = tilt;
     },
     render() {
       renderer.render(scene, camera);
     },
   }).start();
 
-  return { react, setVisible: (v) => (otter.visible = v) };
+  return {
+    react,
+    act,
+    setWeather: (k, instant = false) => {
+      weatherGoal = Math.max(0, Math.min(1, k));
+      if (instant) weather = weatherGoal;
+    },
+    setVisible: (v) => (otter.visible = v),
+  };
 }

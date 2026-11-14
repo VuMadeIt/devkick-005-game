@@ -143,9 +143,14 @@ const BED_TRACKS = [
 const BED_LEVELS = { full: 1, under: 0.35, off: 0 };
 let bed = null;
 let bedLevel = 'full';
+// Trust warms the soundscape: the music swells and the rain ambience fades as the otter comes round.
+let warmth = 0.3;
+const warmGain = (src, k) => (src.includes('music') ? 0.7 + 0.6 * k : 1.35 - 1.05 * k);
 
 function applyBed() {
-  for (const { el, volume } of bed ?? []) el.volume = muted ? 0 : volume * BED_LEVELS[bedLevel];
+  for (const { el, volume, src } of bed ?? []) {
+    el.volume = muted ? 0 : Math.min(1, volume * BED_LEVELS[bedLevel] * warmGain(src, warmth));
+  }
 }
 
 export function startBed() {
@@ -153,11 +158,41 @@ export function startBed() {
   bed = BED_TRACKS.map(({ src, volume }) => {
     const el = new Audio(src);
     el.loop = true;
-    return { el, volume };
+    return { el, volume, src };
   });
   applyBed();
   for (const { el } of bed) {
     el.play().catch((err) => console.warn('[audio] background bed did not start:', err.message));
+  }
+}
+
+// k: 0 (no trust) .. 1 (full trust)
+export function setWarmth(k) {
+  warmth = Math.max(0, Math.min(1, k));
+  applyBed();
+}
+
+// A bright chime for each new Scots word: steps up a major pentatonic scale, so a run of words climbs.
+const PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
+export function chime(step = 0) {
+  if (muted) return;
+  const c = ac();
+  const t = c.currentTime;
+  const f = 523.25 * 2 ** (PENTA[Math.min(step, PENTA.length - 1)] / 12);
+  for (const [mult, vol] of [
+    [1, 0.18],
+    [2, 0.06],
+  ]) {
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = 'triangle';
+    o.frequency.value = f * mult;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+    o.connect(g).connect(c.destination);
+    o.start(t);
+    o.stop(t + 0.65);
   }
 }
 
