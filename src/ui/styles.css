@@ -552,3 +552,8 @@ body.reduce *, body.reduce *::before, body.reduce *::after { animation: none !im
 .mute { font-family: var(--title); letter-spacing: 0.5px; color: var(--parch); background: #4a3426; border: 3px solid #1b120c; border-radius: 6px; box-shadow: 0 3px 0 #1b120c; }
 .row.small .kbtn { min-width: 140px; }
 .replay[hidden] { display: none; }
+
+/* short screens (phones in landscape): keep the otter's face clear, bubble sits to its left */
+@media (max-height: 560px) {
+  #test .bubble { align-self: flex-start; margin-left: 4vw; margin-top: 52px; max-width: 34vw; }
+}

@@ -231,11 +231,19 @@ export function createStage(container) {
     playClip(m);
   };
 
-  window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
+  // On short screens (phones in landscape, small windows) the lesson card sits over the middle of the view,
+  // so shift the picture up: the otter's face lands in the free space above the card.
+  const fitView = () => {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    camera.aspect = w / h;
+    if (h < 560) camera.setViewOffset(w, h, 0, h * 0.3, w, h);
+    else camera.clearViewOffset();
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  });
+    renderer.setSize(w, h);
+  };
+  window.addEventListener('resize', fitView);
+  fitView();
 
   createLoop({
     update(dt) {
