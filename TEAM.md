@@ -1,22 +1,23 @@
 # Team lanes
 
 Fill in names and GitHub usernames. One owner per lane; others help through PRs the owner reviews.
-Suggested split for 4 people; change it once the idea is picked.
+Three people, three lanes.
 
-| Lane | Owner | GitHub | Owns (files) | Tools |
+| Lane | Owner | GitHub | Owns (files) | Issue |
 | --- | --- | --- | --- | --- |
-| Voice scoring | | | `src/voice/` mic, pitch, DTW score, melody visual, `tests/` | Devin |
-| Lesson & game loop | | VuMadeIt? | `src/game/` lesson flow, stars, streak, reactions | Devin |
-| Content & audio | | | `public/assets/audio/`, `src/content/` phrases, voices | ElevenLabs |
-| Lead: art, UI, deploy, demo | Sadman | sadmanc | `public/assets/models/`, `index.html`, UI, `docs/`, deploy, the 5pm demo | Meshy, Devin, Claude |
+| 1. Game shell, feel, deploy, demo | Sadman | sadmanc | `src/main.js`, `src/game/`, `src/ui/`, `index.html`, `docs/` | #1 |
+| 2. Voice scoring (accent score) | Vu | VuMadeIt | `src/voice/`, `tests/voice*.test.js` | #2 |
+| 3. Otter voice, sound, Meshy otter | Paul | Paul-JSN | `src/content/`, `public/assets/`, `assets/manifest.json` | #3 |
+
+Start with the pinned issue #4 (START HERE).
 
 ## Timeline today
 | By | Goal |
 | --- | --- |
-| 2:45 | Grey-box version you can play. Fun first |
-| 3:30 | Feel pass + first sounds |
-| 4:15 | Real models and voice in; feature freeze |
-| 4:40 | Deployed public link, backup gameplay video recorded, demo slide done |
+| 3:15 | Playable shell (done) |
+| 4:00 | Accent score (lane 2) + otter voice lines (lane 3) merged |
+| 4:15 | Meshy otter + sounds in; feature freeze |
+| 4:35 | Deployed public link, backup gameplay video, demo slide |
 | 5:00 | Present |
 
 ## Group asks
