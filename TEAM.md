@@ -5,10 +5,10 @@ Suggested split for 4 people; change it once the idea is picked.
 
 | Lane | Owner | GitHub | Owns (files) | Tools |
 | --- | --- | --- | --- | --- |
-| Gameplay | | | `src/game/` rules, players, physics, `tests/` | Devin |
-| Art & 3D | | | `public/assets/models/`, `public/assets/images/`, look of the scene | Meshy, Blender |
-| Audio & voice | | | `public/assets/audio/`, sound code | ElevenLabs |
-| Lead: UI, deploy, demo | Sadman | sadmanc | `index.html`, UI, `docs/`, deploy, the 5pm demo | Devin, Claude |
+| Voice scoring | | | `src/voice/` mic, pitch, DTW score, melody visual, `tests/` | Devin |
+| Lesson & game loop | | VuMadeIt? | `src/game/` lesson flow, stars, streak, reactions | Devin |
+| Content & audio | | | `public/assets/audio/`, `src/content/` phrases, voices | ElevenLabs |
+| Lead: art, UI, deploy, demo | Sadman | sadmanc | `public/assets/models/`, `index.html`, UI, `docs/`, deploy, the 5pm demo | Meshy, Devin, Claude |
 
 ## Timeline today
 | By | Goal |

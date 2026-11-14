@@ -1,14 +1,15 @@
 # The idea
 
-Not picked yet. Fill in once the team decides:
+**Accent trainer** (working title). Full draft plan: [PLAN.md](PLAN.md). The idea owner's detailed plan replaces this when it's ready.
 
-- **One line:**
-- **Chroma category:** Arcade & Party
-- **How a judge plays it in the first 10 seconds:**
-- **Controls:**
-- **Where AI is part of the fun:**
-- **Meshy makes:**
-- **ElevenLabs makes:**
-- **Must work by 5pm:**
-- **Only if there's time:**
-- **Out of scope:**
+- **One line:** travel the world and learn local accents by talking into the game; Duolingo for accents.
+- **Chroma category:** Experimental & Open Format (recommended) or Interactive Narrative. Not decided.
+- **First 10 seconds:** a local character says a line, you hold the mic and say it back, you get stars and a reaction.
+- **Controls:** one hold-to-talk button (Space on PC, big button on phone).
+- **Where AI is part of the fun:** the game listens and scores you; local characters speak and react in AI voices.
+- **Meshy makes:** the local character(s) and the city diorama.
+- **ElevenLabs makes:** character voices and lines, speech-to-text, music, SFX.
+- **Must work by 5pm:** one city, 3-5 phrases, word check + melody/rhythm score, reactions, stars.
+- **Only if there's time:** AI coach tips, more cities, phone support, 2-player accent-off.
+- **Out of scope today:** accounts, saving progress online, non-English languages.
+- **Respect rule:** celebrate accents, never mock them. Everyday phrases. No real people's voices.

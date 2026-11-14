@@ -4,7 +4,7 @@ Our entry for the **Devin Game Jam (devkick 005)**, Nov 14, 2026, University of 
 **Chroma Awards, Game division**. Presentations are at **5pm**; presenting is how we enter.
 The winner goes straight to the semifinals of its Chroma category.
 
-**Idea:** to be decided by the team (see `docs/IDEA.md`).
+**Idea:** an accent trainer: travel the world and learn local accents by talking into the game (see `docs/IDEA.md` and `docs/PLAN.md`).
 
 ## Run it
 ```bash
