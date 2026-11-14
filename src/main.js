@@ -6,6 +6,7 @@ import { say, sfx, setMuted, isMuted, unlockAudio, startBed, setBed } from './ga
 import { band, clampTrust, placement, trustDelta } from './game/placement.js';
 import { listen, isSupported } from './voice/index.js';
 import { createLive } from './game/liveVoice.js';
+import { createLessons } from './ui/lessons.js';
 
 const $ = (id) => document.getElementById(id);
 const stage = createStage($('stage'));
@@ -34,6 +35,40 @@ function floatPop(text, kind = '', delay = 0) {
 
 function show(id) {
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === id));
+  // 2D screens (title, map, result, lessons) cover the 3D street; the otter test shows it
+  document.body.classList.toggle('flat', $(id).classList.contains('flat'));
+}
+
+// Placement: a good accent test skips you 50 lessons ahead, otherwise you start at lesson 1.
+const SKIP_AT = 0.6;
+const SKIP_LESSONS = 50;
+const lessons = createLessons({ root: $('learn'), onTap: ({ state }) => sfx(state === 'locked' ? 'ok' : 'tap') });
+let placedAt = 0;
+
+// score counts up (time grows with the number, 0.35..1.2 s), then the card settles
+function countUp(el, to) {
+  const dur = Math.min(1200, 350 + to * 9);
+  const t0 = performance.now();
+  const tick = (t) => {
+    const k = Math.min(1, (t - t0) / dur);
+    el.textContent = Math.round(to * (1 - (1 - k) ** 3));
+    if (k < 1) requestAnimationFrame(tick);
+    else popIn(el.parentElement);
+  };
+  requestAnimationFrame(tick);
+}
+
+function showResult(average, level) {
+  const well = average >= SKIP_AT;
+  placedAt = well ? SKIP_LESSONS : 0;
+  $('result-level').textContent = level.name;
+  $('result-note').textContent = well
+    ? `Ye sound like ye belong here. Skipping you ahead ${SKIP_LESSONS} lessons to lesson ${SKIP_LESSONS + 1}.`
+    : 'Everyone starts somewhere. You begin at lesson 1.';
+  $('result-score').textContent = '0';
+  show('result');
+  popIn($('result').querySelector('.popup'));
+  countUp($('result-score'), Math.round(average * 100));
 }
 function popIn(el) {
   el.classList.remove('pop');
@@ -219,18 +254,8 @@ async function judge(r) {
 async function finish() {
   const p = placement(scores, place.path);
   await otterSays(place.character.outro, 'talk');
-  $('result-level').textContent = p.level.name;
-  $('result-score').textContent = `Accent score ${Math.round(p.average * 100)} / 100`;
-  const path = $('path');
-  path.innerHTML = '';
-  place.path.forEach((lvl, i) => {
-    const li = document.createElement('li');
-    li.textContent = lvl.name;
-    li.className = i < p.index ? 'done' : i === p.index ? 'here' : 'locked';
-    path.appendChild(li);
-  });
   $('bubble').classList.remove('show');
-  show('result');
+  showResult(p.average, p.level);
   stage.react(p.index >= 2 ? 'good' : 'ok');
   // The otter cheers over a victory sting sized to the level (lane 3); synth sting if it's missing.
   if (p.level.celebration) {
@@ -267,9 +292,57 @@ $('to-map').addEventListener('click', () => {
   $('bubble').classList.remove('show');
   show('map');
 });
+// Title popups: Settings and Credits (Esc or the dark backdrop closes them)
+function openModal(id) {
+  sfx('tap');
+  $(id).classList.add('open');
+  $(id).querySelector('.close').focus();
+}
+function closeModals() {
+  document.querySelectorAll('.modal.open').forEach((m) => m.classList.remove('open'));
+}
+$('open-settings').addEventListener('click', () => openModal('settings'));
+$('open-credits').addEventListener('click', () => openModal('credits'));
+document.querySelectorAll('.modal').forEach((m) =>
+  m.addEventListener('click', (e) => {
+    if (e.target === m || e.target.closest('[data-close]')) {
+      sfx('tap');
+      closeModals();
+    }
+  }),
+);
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModals();
+});
+$('set-sound').addEventListener('change', (e) => {
+  setMuted(!e.target.checked);
+  $('mute').textContent = isMuted() ? 'Sound off' : 'Sound on';
+  sfx('tap');
+});
+$('set-motion').addEventListener('change', (e) => {
+  document.body.classList.toggle('reduce', e.target.checked);
+  sfx('tap');
+});
+
+$('start-learning').addEventListener('click', () => {
+  sfx('tap');
+  show('learn');
+  lessons.open(placedAt, { skipped: placedAt > 0 });
+});
+$('learn-back').addEventListener('click', () => {
+  sfx('tap');
+  show('map');
+});
+// Demo shortcut without a mic: #good or #bad jumps straight to the result.
+if (location.hash === '#good' || location.hash === '#bad') {
+  const avg = location.hash === '#good' ? 0.82 : 0.31;
+  showResult(avg, placement([avg], place.path).level);
+}
+
 $('mute').addEventListener('click', () => {
   setMuted(!isMuted());
   $('mute').textContent = isMuted() ? 'Sound off' : 'Sound on';
+  $('set-sound').checked = !isMuted();
 });
 
 const talk = $('talk');
