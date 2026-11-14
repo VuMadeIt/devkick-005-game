@@ -41,22 +41,12 @@ h2 { margin: 0 0 12px; font-size: 30px; }
 .row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
 /* Map */
-.map-wrap { width: min(920px, 100%); text-align: center; }
+.map-wrap { width: min(920px, 100%, calc((100vh - 120px) * 1.43)); text-align: center; }
 .map {
-  position: relative; width: 100%; aspect-ratio: 2 / 1; border: 3px solid var(--ink); border-radius: 22px;
-  box-shadow: 0 6px 0 var(--ink); overflow: hidden;
-  background: radial-gradient(circle at 50% 50%, #5fa0d8, #3d7cc0);
-}
-.map::before {
-  /* placeholder continents; replace with a generated map image */
-  content: ''; position: absolute; inset: 0; opacity: 0.9;
-  background:
-    radial-gradient(ellipse 13% 18% at 22% 35%, #8cc56d 98%, transparent 100%),
-    radial-gradient(ellipse 7% 16% at 30% 66%, #8cc56d 98%, transparent 100%),
-    radial-gradient(ellipse 9% 10% at 50% 28%, #8cc56d 98%, transparent 100%),
-    radial-gradient(ellipse 9% 18% at 54% 58%, #8cc56d 98%, transparent 100%),
-    radial-gradient(ellipse 18% 15% at 72% 33%, #8cc56d 98%, transparent 100%),
-    radial-gradient(ellipse 7% 6% at 85% 73%, #8cc56d 98%, transparent 100%);
+  /* world map picture (public/assets/images/world-map.webp, 1200x839); pins are % of the picture */
+  position: relative; width: 100%; aspect-ratio: 1200 / 839; margin: 0 auto; border: 3px solid var(--ink);
+  border-radius: 22px; box-shadow: 0 6px 0 var(--ink); overflow: hidden;
+  background: #0d3a55 center / 100% 100% no-repeat; /* picture set inline in index.html (relative path) */
 }
 .pin {
   position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column;
@@ -136,7 +126,7 @@ h2 { margin: 0 0 12px; font-size: 30px; }
   .card { padding: 16px 22px; }
   h1 { font-size: 40px; }
   .sub { margin-bottom: 10px; }
-  .map { aspect-ratio: auto; height: calc(100vh - 110px); }
+  .map { width: auto; height: calc(100vh - 110px); max-width: 100%; }
   .bubble { font-size: 16px; padding: 6px 12px; }
   .prompt { padding: 8px 16px; margin-bottom: 8px; }
   .line { font-size: 24px; }
