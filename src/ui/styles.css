@@ -151,3 +151,48 @@ h2 { margin: 0 0 12px; font-size: 30px; }
 #mel-ref { stroke: var(--amber); }
 #mel-you { stroke: var(--blue); stroke-dasharray: 0; }
 @media (max-height: 450px) { .melody { height: 30px; margin-top: 3px; } }
+
+/* Live sing-along: otter melody (amber) vs. your voice (blue), drawn while you talk */
+.sing { position: relative; width: min(420px, 78vw); margin: 6px auto 0; }
+.live { display: none; width: 100%; height: 64px; background: #f1ebde; border: 2px solid var(--line); border-radius: 12px; }
+.live.show { display: block; }
+.sing .match {
+  position: absolute; top: 4px; right: 8px; font-weight: 700; font-size: 14px; color: var(--blue-dark); opacity: 0;
+  transition: opacity 0.2s;
+}
+.sing .match.show { opacity: 1; }
+.legend { position: absolute; top: 4px; left: 8px; font-size: 12px; opacity: 0.75; display: flex; align-items: center; gap: 4px; pointer-events: none; }
+.legend i { display: inline-block; width: 12px; height: 4px; border-radius: 2px; margin-left: 4px; }
+.legend .o { background: #e8961b; }
+.legend .y { background: #2f6bd8; }
+.talkrow { align-self: center; display: flex; align-items: center; gap: 12px; }
+.replay {
+  font: 600 16px 'Fredoka', sans-serif; background: var(--paper); color: var(--ink); border: 3px solid var(--ink);
+  border-radius: 999px; padding: 8px 16px; min-height: 48px; box-shadow: 0 4px 0 var(--ink); cursor: pointer;
+}
+.replay:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.replay:disabled { opacity: 0.5; cursor: default; }
+.talk { position: relative; }
+.talk .ring {
+  position: absolute; inset: -6px; border-radius: 999px; border: 4px solid var(--amber); pointer-events: none;
+  opacity: calc(var(--vol, 0) * 1.4); transform: scale(calc(1 + var(--vol, 0) * 0.22)); transition: transform 0.05s linear;
+}
+.talk.voiced { background: #ef6a3c; }
+/* floating "+12 trust" / "Streak x3" pops */
+.pops { position: absolute; left: 50%; top: 42%; width: 0; height: 0; pointer-events: none; z-index: 4; }
+.pops span {
+  position: absolute; left: 0; transform: translateX(-50%); white-space: nowrap; font: 700 30px 'Fredoka', sans-serif;
+  color: #fff; -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; animation: floatup 1.4s ease-out forwards;
+}
+.pops span.good { color: #7ee07f; }
+.pops span.bad { color: #ff8a73; }
+.pops span.streak { color: var(--amber); font-size: 24px; top: 36px; }
+@keyframes floatup { 0% { opacity: 0; transform: translate(-50%, 10px) scale(0.6); } 15% { opacity: 1; transform: translate(-50%, 0) scale(1.15); } 30% { transform: translate(-50%, -6px) scale(1); } 100% { opacity: 0; transform: translate(-50%, -60px) scale(1); } }
+@media (max-height: 450px) {
+  .live { height: 40px; }
+  .sing { margin-top: 3px; }
+  .meaning { font-size: 14px; }
+  .heard { min-height: 18px; font-size: 14px; margin-top: 2px; }
+  .replay { min-height: 44px; padding: 6px 12px; font-size: 14px; }
+  .pops span { font-size: 24px; }
+}
