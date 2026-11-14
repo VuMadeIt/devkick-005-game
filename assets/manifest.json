@@ -69,7 +69,7 @@
       "id": "scotland-braw-good",
       "file": "public/assets/audio/scotland/braw-good.mp3",
       "tool": "ElevenLabs TTS (eleven_v3)",
-      "prompt": "[laughs] Braw indeed! Ye've been here before.",
+      "prompt": "[impressed] Braw indeed! Ye've been here before.",
       "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv), made with ElevenLabs Voice Design (eleven_ttv_v3): A thick, authentic working-class Glasgow, Scotland accent, strong and unmistakably Glaswegian, not generic British or Irish. Mid-30s, warm, cheeky and quick-talking, friendly and teasing but kind. Strong rolled Rs, broad Glaswegian vowels, lively upbeat energy, a fun character voice for an otter mascot in a game.",
       "made_by": "Paul",
       "date": "2026-11-14"
