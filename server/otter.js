@@ -9,8 +9,8 @@ const MODEL = 'claude-opus-5-5';
 // ElevenLabs voices (Voice Design, Glaswegian). VOICE_<ID> env vars override, e.g. VOICE_SENGA.
 const VOICES = {
   otter: '9wOu10b6k3SOUgwDbKKv', // Devin Otter (Glaswegian)
-  senga: '',
-  hamish: '',
+  senga: 'U8lGdXfIYVx0Nas6m5XL', // Senga (Glasgow seagull)
+  hamish: 'KnVW5icoKhKlU7DbTW8i', // Big Hamish (Glasgow bus driver)
 };
 const voiceFor = (npc, env) => env[`VOICE_${npc.toUpperCase()}`] || VOICES[npc] || VOICES.otter;
 const TTS_MODEL = 'eleven_v3';
