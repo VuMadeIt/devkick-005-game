@@ -2,7 +2,18 @@
   "_readme": "Every generated asset goes here: what it is, the tool, the exact prompt, who made it, and the file. This is our proof for the Chroma tool awards (Meshy, ElevenLabs, Rosebud).",
   "models": [],
   "audio": [],
-  "images": [],
+  "images": [
+    {
+      "id": "otter-front-ref",
+      "file": "art/otter-front.png",
+      "tool": "ChatGPT image (gpt-6.1-sol, medium)",
+      "prompt_file": "art/otter-front.prompt.txt",
+      "reference": "art/ref/devkick-otter.png (devkick.com/downhill/otter.png, Devin mascot)",
+      "made_by": "Sadman (Claude Code)",
+      "date": "2026-11-14",
+      "notes": "input for Meshy image-to-3D"
+    }
+  ],
   "_example": {
     "id": "hero-fighter",
     "file": "public/assets/models/hero-fighter.glb",

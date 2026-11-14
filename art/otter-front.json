@@ -1,0 +1,15 @@
+{
+  "engine": "Codex built-in image_gen",
+  "model": "gpt-6.1-sol, medium effort",
+  "references": [
+    "/Users/sadman/wildbloom/hackathons/devin-game-jam-2026/game-repo/art/ref/devkick-otter.png"
+  ],
+  "prompt": "Turn the attached mascot (an orange cartoon otter with a white muzzle, black outlines) into a reference image for an image-to-3D tool.\n\nShow the SAME character, same proportions, colours and friendly face, as a LOW-POLY 3D game character render:\n- standing upright on two legs, full body, facing straight at the camera, arms held slightly out from the body (A-pose), tail visible behind one leg\n- chunky, cute, simple faceted low-poly shapes with flat colours (orange body, darker orange shading, white muzzle and belly patch, black eyes and nose)\n- wearing a blue-and-green tartan flat cap and a matching small tartan scarf (he lives in Glasgow)\n- no laptop, no props, nothing in the hands\n- plain light grey background, soft even studio lighting, no shadows on the ground, no text, no logo\n- the whole character fits in frame with a margin, centred",
+  "source": "/Users/sadman/.codex/generated_images/01a1dbcc-07e3-7570-8005-79327ecafa81/exec-3e95ba1b-0b79-46f2-8d25-643677bc238b.png",
+  "size": [
+    1199,
+    1312
+  ],
+  "seconds": 46,
+  "date": "2026-11-14"
+}
