@@ -14,8 +14,106 @@ OUT = os.path.join(os.path.dirname(__file__), '..', '..', 'public', 'assets', 'm
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 
+# ---------- textures (procedural, small repeats: granite setts and ashlar stone) ----------
+import numpy as np
+
+TEX_DIR = os.path.join(os.path.dirname(__file__), '..', 'tex')
+os.makedirs(TEX_DIR, exist_ok=True)
+rng = np.random.default_rng(14)
+
+
+def save_tex(name, rgb):
+    h, w, _ = rgb.shape
+    img = bpy.data.images.new(name, w, h, alpha=False)
+    rgba = np.concatenate([np.clip(rgb, 0, 1), np.ones((h, w, 1))], axis=2)
+    img.pixels.foreach_set(rgba[::-1].astype(np.float32).ravel())
+    path = os.path.abspath(os.path.join(TEX_DIR, name + '.jpg'))
+    img.filepath_raw = path
+    img.file_format = 'JPEG'
+    img.save()
+    img.pack()
+    return img
+
+
+def hexl(h):
+    h = h.lstrip('#')
+    return np.array([int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)])
+
+
+def noise(n, scale):
+    small = rng.random((n // scale + 2, n // scale + 2))
+    big = np.kron(small, np.ones((scale, scale)))[:n, :n]
+    return big
+
+
+def paving_tex(n=512):
+    # 2.4 m square: setts 0.6 x 0.3 m (4 across, 8 down), running bond, warm pink/grey granite like Buchanan St
+    cols = [hexl('#8d6b63'), hexl('#7b7372'), hexl('#9c8a82'), hexl('#6a5f5d'), hexl('#a07a6c'), hexl('#837e7e')]
+    img = np.zeros((n, n, 3))
+    rows, per = 8, 4
+    rh, cw = n // rows, n // per
+    for r in range(rows):
+        off = (cw // 2) if r % 2 else 0
+        for c in range(-1, per + 1):
+            x0 = c * cw + off
+            col = cols[rng.integers(len(cols))] * rng.uniform(0.9, 1.08)
+            xs = slice(max(0, x0), min(n, x0 + cw))
+            if xs.start >= xs.stop:
+                continue
+            img[r * rh:(r + 1) * rh, xs] = col
+            img[r * rh:(r + 1) * rh, xs.start:xs.start + 2] = hexl('#3a3434')
+        img[r * rh:r * rh + 2, :] = hexl('#3a3434')
+    speck = rng.random((n, n, 1))
+    img *= 0.88 + 0.2 * speck  # granite grain
+    img *= (0.92 + 0.12 * noise(n, 32))[..., None]  # wet patches / wear
+    return img
+
+
+def stone_tex(base, n=512):
+    # 3 m square of ashlar: courses 0.375 m (8), blocks 0.75-1.5 m, thin darker joints, soot streaks
+    b = hexl(base)
+    img = np.ones((n, n, 3)) * b
+    rows = 8
+    rh = n // rows
+    for r in range(rows):
+        x = -rng.integers(0, 120)
+        while x < n:
+            w = int(rng.integers(128, 256))
+            xs = slice(max(0, x), min(n, x + w))
+            if xs.start < xs.stop:
+                img[r * rh:(r + 1) * rh, xs] *= rng.uniform(0.9, 1.08)
+                img[r * rh:(r + 1) * rh, xs.start:xs.start + 2] = b * 0.62
+            x += w
+        img[r * rh:r * rh + 2, :] = b * 0.62
+    img *= (0.9 + 0.14 * rng.random((n, n, 1)))
+    streak = np.kron(rng.random((1, n // 8)), np.ones((n, 8)))
+    img *= (0.88 + 0.12 * (streak * 0.6 + noise(n, 64) * 0.4))[..., None]
+    return img
+
+
+TEX = {
+    'paving': save_tex('paving_setts', paving_tex()),
+    'red': save_tex('stone_red', stone_tex('#9a4a3c')),
+    'blond': save_tex('stone_blond', stone_tex('#c4a173')),
+    'grey': save_tex('stone_grey', stone_tex('#a39b8e')),
+}
+UV_SCALE = {'paving_setts': 2.4, 'red_sandstone': 3.0, 'blond_sandstone': 3.0, 'grey_stone': 3.0}
+
 # ---------- materials ----------
 MATS = {}
+
+
+def tmat(name, img, rough=0.85):
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    b = nt.nodes['Principled BSDF']
+    t = nt.nodes.new('ShaderNodeTexImage')
+    t.image = img
+    nt.links.new(t.outputs['Color'], b.inputs['Base Color'])
+    b.inputs['Roughness'].default_value = rough
+    MATS[name] = m
+    return m
 
 
 def mat(name, color, rough=0.85, metal=0.0, emit=None):
@@ -40,27 +138,32 @@ def srgb(h):
     return tuple(((x + 0.055) / 1.055) ** 2.4 if x > 0.04045 else x / 12.92 for x in c)
 
 
-RED = mat('red_sandstone', srgb('#9a4a3c'))
+RED = tmat('red_sandstone', TEX['red'])
 RED_TRIM = mat('red_sandstone_trim', srgb('#b56452'))
-BLOND = mat('blond_sandstone', srgb('#c9a979'))
+BLOND = tmat('blond_sandstone', TEX['blond'])
 BLOND_TRIM = mat('blond_sandstone_trim', srgb('#dcc297'))
-GREY = mat('grey_stone', srgb('#a39b8e'))
+GREY = tmat('grey_stone', TEX['grey'])
 GLASS = mat('window_glass', srgb('#2b3640'), rough=0.08, metal=0.6)
-SHOPGLASS = mat('shop_glass', srgb('#3c4a52'), rough=0.05, metal=0.4, emit=srgb('#5a4a30'))
+SHOPGLASS = mat('shop_glass', srgb('#2a3238'), rough=0.05, metal=0.5)
 FRAME = mat('white_frame', srgb('#ece6da'), rough=0.6)
 SLATE = mat('slate_roof', srgb('#4a4b52'), rough=0.7)
 CHIMNEY_POT = mat('chimney_pot', srgb('#a8573a'))
 IRON = mat('black_iron', srgb('#1c1e22'), rough=0.45, metal=0.7)
 LAMP = mat('lamp_glow', srgb('#ffe2a0'), rough=0.3, emit=srgb('#ffd27a'))
-PAVE = [mat('paving_pink', srgb('#7d6560'), rough=0.22), mat('paving_grey', srgb('#68666a'), rough=0.22),
-        mat('paving_dark', srgb('#4c4a4c'), rough=0.18)]
+PAVE = tmat('paving_setts', TEX['paving'], rough=0.2)
+STEEL = mat('brushed_steel', srgb('#9ea3a8'), rough=0.3, metal=0.9)
+POLE = mat('lamp_column_grey', srgb('#6d7176'), rough=0.5, metal=0.5)
+PLANTER = mat('planter_black', srgb('#16181a'), rough=0.6)
+BANNER = mat('banner_navy', srgb('#141b2e'), rough=0.7)
+SCREEN = mat('kiosk_screen', srgb('#3aa0d8'), rough=0.2, emit=srgb('#4ab0e8'))
+GRATE = mat('drain_grate', srgb('#2a2a2c'), rough=0.6, metal=0.6)
 KERB = mat('kerb', srgb('#7a7672'))
 LEAF = mat('leaf', srgb('#4f7a3a'), rough=0.9)
 BARK = mat('bark', srgb('#4a3a2c'))
 WOOD = mat('bench_wood', srgb('#7a5534'))
-SIGNS = [mat('sign_teal', srgb('#1f8a85'), rough=0.5), mat('sign_red', srgb('#b3262e'), rough=0.5),
-         mat('sign_navy', srgb('#1f2f5a'), rough=0.5), mat('sign_green', srgb('#1f5a3a'), rough=0.5),
-         mat('sign_gold', srgb('#b8892e'), rough=0.4, metal=0.5)]
+SIGNS = [mat('sign_black', srgb('#1a1b1d'), rough=0.4), mat('sign_cream', srgb('#e6dfd2'), rough=0.5),
+         mat('sign_navy', srgb('#1f2a44'), rough=0.5), mat('sign_green', srgb('#23382c'), rough=0.5),
+         mat('sign_charcoal', srgb('#3a3b3e'), rough=0.4, metal=0.3)]
 CONE = mat('traffic_cone', srgb('#f26b21'), rough=0.5)
 BRONZE = mat('statue_bronze', srgb('#3f4a40'), rough=0.5, metal=0.6)
 FLOWERS = mat('flowers', srgb('#c8508a'), rough=0.9)
@@ -155,15 +258,9 @@ Y0, Y1 = -14.0, 86.0
 TILE = 1.25
 
 # paving: per-tile colours like Buchanan Street's pink/grey granite
-nx = int(2 * HALF / TILE)
-ny = int((Y1 - Y0) / TILE)
-for i in range(nx):
-    for j in range(ny):
-        x0 = -HALF + i * TILE
-        y0 = Y0 + j * TILE
-        r = random.random()
-        m = PAVE[0] if r < 0.55 else PAVE[1] if r < 0.88 else PAVE[2]
-        add([(x0, y0, 0), (x0 + TILE, y0, 0), (x0 + TILE, y0 + TILE, 0), (x0, y0 + TILE, 0)], [(0, 1, 2, 3)], m)
+add([(-HALF, Y0, 0), (HALF, Y0, 0), (HALF, Y1, 0), (-HALF, Y1, 0)], [(0, 1, 2, 3)], PAVE)
+for (gx, gy) in ((1.8, 2.0), (-2.6, 14.0), (2.2, 30.0), (-1.5, 47.0), (2.8, 61.0)):
+    box(GRATE, gx - 0.9, gy - 0.45, 0, gx + 0.9, gy + 0.45, 0.01)  # drain / utility covers
 for s in (-1, 1):
     box(KERB, s * HALF - 0.15, Y0, -0.05, s * HALF + 0.15, Y1, 0.06)
 
@@ -202,9 +299,9 @@ def building(side, y0, width):
     red = random.random() < 0.45
     body = RED if red else (BLOND if random.random() < 0.75 else GREY)
     trim = RED_TRIM if red else BLOND_TRIM
-    floors = random.choice([4, 4, 5, 5, 6])
+    floors = random.choice([5, 5, 6, 6, 7])
     gf = 4.6
-    fh = 3.3
+    fh = 3.5
     top = gf + floors * fh
     bx0, bx1 = (fx, fx + depth) if side > 0 else (fx - depth, fx)
     box(body, bx0, y0, 0, bx1, y0 + width, top)
@@ -227,7 +324,7 @@ def building(side, y0, width):
     has_bay = width > 8.5 and random.random() < 0.7
     bay_y = y0 + width / 2
     bay_w = 3.0
-    ncols = max(2, int(width // 2.3))
+    ncols = max(3, int(width // 1.9))
     fancy = random.random() < 0.5
     for f in range(floors):
         z = gf + f * fh + 0.55
@@ -236,10 +333,13 @@ def building(side, y0, width):
             yc = y0 + width * (c + 0.5) / ncols
             if has_bay and abs(yc - bay_y) < bay_w / 2 + 0.6:
                 continue
-            window(side, fx, yc, z, 1.05, wh, trim, fancy and f < 2)
+            window(side, fx, yc, z, 0.95, wh, trim, fancy and f in (0, 2))
         # string course
         zc = gf + (f + 1) * fh - 0.12
         box(trim, min(fx, fx + d * 0.12), y0, zc, max(fx, fx + d * 0.12), y0 + width, zc + 0.18)
+    for c in range(0, ncols + 1, 2):
+        yp = y0 + width * c / ncols
+        box(trim, min(fx, fx + d * 0.16), yp - 0.16, gf, max(fx, fx + d * 0.16), yp + 0.16, top - 0.1)
     if has_bay:
         bfx = fx + d * 1.1
         box(body, min(fx, bfx), bay_y - bay_w / 2, gf, max(fx, bfx), bay_y + bay_w / 2, top - fh * 0.15)
@@ -360,20 +460,69 @@ def planter(x, y):
         cbox(FLOWERS, x + 0.45 * math.cos(a), y + 0.45 * math.sin(a), 1.05, 0.22, 0.22, 0.22)
 
 
-for y in range(6, 80, 13):
+def column_lamp(x, y, side):
+    # modern Buchanan St lighting column: tall grey pole, collar bands, angled arm with a flat lantern
+    cyl(POLE, x, y, 0, 0.16, 9.0, seg=10, r1=0.11)
+    for z in (3.0, 3.3):
+        cyl(STEEL, x, y, z, 0.17, 0.12, seg=10)
+    ax = x - side * 1.6
+    box(POLE, min(x, ax), y - 0.05, 8.6, max(x, ax), y + 0.05, 8.72)
+    box(STEEL, ax - 0.45, y - 0.3, 8.45, ax + 0.45, y + 0.3, 8.6)
+    box(LAMP, ax - 0.4, y - 0.25, 8.42, ax + 0.4, y + 0.25, 8.45)
+
+
+def black_planter(x, y):
+    box(PLANTER, x - 1.0, y - 0.75, 0, x + 1.0, y + 0.75, 0.95)
+    box(PLANTER, x - 1.05, y - 0.8, 0.95, x + 1.05, y + 0.8, 1.0)
+    for k in range(5):
+        blob(LEAF, x - 0.7 + k * 0.35, y + random.uniform(-0.3, 0.3), 1.0, 0.35)
+    for k in range(7):
+        cbox(FLOWERS, x + random.uniform(-0.8, 0.8), y + random.uniform(-0.55, 0.55), 1.3, 0.14, 0.14, 0.14)
+
+
+def bollard(x, y):
+    cyl(STEEL, x, y, 0, 0.09, 1.0, seg=10)
+    cyl(STEEL, x, y, 1.0, 0.09, 0.04, seg=10, r1=0.07)
+
+
+def kiosk(x, y, face):
+    box(IRON, x - 0.1, y - 0.6, 0, x + 0.1, y + 0.6, 2.7)
+    box(SCREEN, x + face * 0.1, y - 0.5, 0.9, x + face * 0.12, y + 0.5, 2.5)
+
+
+def flagpole(fx, y, side, z):
+    # angled flag pole out of the facade with a long dark banner (the shopfront flags in the photos)
+    d = -side
+    tip = fx + d * 2.0
+    for k in range(6):
+        t0, t1 = k / 6, (k + 1) / 6
+        box(IRON, fx + d * 2.0 * t0 - 0.03, y - 0.03, z + 1.2 * t0, fx + d * 2.0 * t1 + 0.03, y + 0.03, z + 1.2 * t1 + 0.06)
+    xb0, xb1 = fx + d * 0.6, tip
+    add([(xb0, y, z + 0.36), (xb1, y, z + 1.2), (xb1, y, z - 0.4), (xb0, y, z - 1.0)], [(0, 1, 2, 3), (3, 2, 1, 0)], BANNER)
+
+
+for y in range(0, 82, 15):
+    column_lamp(-5.8, y, -1)
+    column_lamp(5.8, y + 7, 1)
+for y in (30, 58):
     lamp(0, y)
-for y in (16, 42, 68):
-    tree(-2.8, y, 1.1)
-    tree(2.9, y + 6, 1.0)
-for y in (11, 37, 63):
+tree(-3.2, 40, 1.15)
+tree(3.0, 66, 1.05)
+for y in (24, 52):
     bench(-4.6, y)
-    bench(4.6, y + 9)
-for y in (-2, 24, 50):
-    planter(-5.2, y)
-    planter(5.2, y + 4)
-for y in range(-10, 84, 4):
-    for x in (-6.2, 6.2):
-        cyl(IRON, x, y, 0, 0.1, 0.9, seg=6)  # bollards
+for y in (16, 36, 56, 74):
+    black_planter(-4.4, y)
+    black_planter(4.4, y - 6)
+for y in range(8, 84, 6):
+    for x in (-2.4, 2.4):
+        bollard(x + random.uniform(-0.3, 0.3), y + 3)
+kiosk(4.9, 6, -1)
+kiosk(-4.9, 34, 1)
+for y in range(-4, 40, 3):
+    flagpole(-HALF, y, -1, 6.4)
+# overhead catenary wires across the street (they carry the lights in the photos)
+for y in range(-2, 82, 9):
+    box(IRON, -HALF, y - 0.01, 10.5, HALF, y + 0.01, 10.53)
 
 # Glasgow Subway entrance (orange "S" sign on a pole)
 box(IRON, 4.0, 18, 0, 6.6, 21, 0.9)
@@ -421,9 +570,32 @@ bpy.ops.object.mode_set(mode='OBJECT')
 for p in me.polygons:
     p.use_smooth = False
 
+# box-projected UVs in metres so the tiling textures stay true to scale
+import bmesh
+bm = bmesh.new()
+bm.from_mesh(me)
+uvl = bm.loops.layers.uv.new('UVMap')
+names = [m.name for m in me.materials]
+for f in bm.faces:
+    sc = UV_SCALE.get(names[f.material_index], 1.0)
+    n = f.normal
+    ax = max(range(3), key=lambda i: abs(n[i]))
+    for lp in f.loops:
+        co = lp.vert.co
+        if ax == 2:
+            u, v = co.x, co.y
+        elif ax == 0:
+            u, v = co.y, co.z
+        else:
+            u, v = co.x, co.z
+        lp[uvl].uv = (u / sc, v / sc)
+bm.to_mesh(me)
+bm.free()
+
 tris = sum(len(p.vertices) - 2 for p in me.polygons)
 print(f'GLASGOW: {len(me.vertices)} verts, {tris} tris, {len(me.materials)} materials')
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=os.path.abspath(OUT), export_format='GLB', use_selection=True,
-                          export_apply=True, export_yup=True)
+                          export_apply=True, export_yup=True, export_image_format='JPEG',
+                          export_meshopt_compression_enable=True)
 print('GLASGOW: wrote', os.path.abspath(OUT), os.path.getsize(os.path.abspath(OUT)) // 1024, 'KB')
