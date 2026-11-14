@@ -614,3 +614,21 @@ body.reduce *, body.reduce *::before, body.reduce *::after { animation: none !im
   .cast-card img { width: 72px; }
   .cast-card small { font-size: 11px; }
 }
+
+/* Free talk: "Try saying" reply suggestions */
+.suggest { display: none; margin-top: 8px; text-align: left; }
+.suggest.show { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.suggest-head { grid-column: 1 / -1; font-size: 12px; font-weight: 700; opacity: 0.65; text-align: center; }
+.suggest-card {
+  display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 10px;
+  background: rgba(255, 255, 255, 0.55); border: 2px solid rgba(29, 27, 46, 0.18);
+}
+.suggest-card b { font-size: 16px; line-height: 1.2; }
+.suggest-card span { font-size: 12.5px; opacity: 0.7; line-height: 1.2; }
+@media (max-height: 560px) {
+  .suggest { margin-top: 4px; }
+  .suggest.show { gap: 5px; }
+  .suggest-card { padding: 4px 8px; }
+  .suggest-card b { font-size: 13px; }
+  .suggest-card span { font-size: 11px; }
+}

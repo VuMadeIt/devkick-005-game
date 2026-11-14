@@ -12,12 +12,16 @@ export const OtterTurn = z.object({
   sounded_local: z.boolean(),
   hint: z.string().max(120),
   echo: z.string().max(60).default(''),
+  suggestions: z
+    .array(z.object({ say: z.string().max(70), means: z.string().max(70) }))
+    .max(3)
+    .default([]),
 });
 
 export const OTTER_TURN_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['reply', 'mood', 'action', 'trust_delta', 'sounded_local', 'hint', 'echo'],
+  required: ['reply', 'mood', 'action', 'trust_delta', 'sounded_local', 'hint', 'echo', 'suggestions'],
   properties: {
     reply: { type: 'string', description: "The otter's spoken line, 1-2 short sentences, Glaswegian Scots. May start with one eleven_v3 audio tag like [laughs] or [suspicious]." },
     mood: { type: 'string', enum: MOODS },
@@ -26,6 +30,20 @@ export const OTTER_TURN_SCHEMA = {
     sounded_local: { type: 'boolean' },
     hint: { type: 'string', description: 'One short English coaching tip for the player (a Scots word or sound to try), or empty.' },
     echo: { type: 'string', description: 'A short Glaswegian phrase (2-6 words) for the player to say back to you, or empty.' },
+    suggestions: {
+      type: 'array',
+      description:
+        "Exactly 2 replies the player could say next, answering what you just said. Real, everyday Glaswegian a local would use, 3-10 words each, easy to read aloud, different from each other (e.g. one friendly, one cheeky). Each with a plain-English meaning. If you asked them to say something back, the first suggestion is that phrase.",
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['say', 'means'],
+        properties: {
+          say: { type: 'string', description: 'What to say, in Glaswegian Scots.' },
+          means: { type: 'string', description: 'What it means in plain English.' },
+        },
+      },
+    },
   },
 };
 
