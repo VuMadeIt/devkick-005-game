@@ -7,6 +7,8 @@ import { band, clampTrust, placement, trustDelta } from './game/placement.js';
 import { listen, isSupported } from './voice/index.js';
 import { createLive } from './game/liveVoice.js';
 import { createLessons } from './ui/lessons.js';
+import { newChat, applyTurn, lineFrom, talk as askOtter, START_TRUST } from './game/conversation.js';
+import { startRecording, blobToBase64 } from './voice/record.js';
 import flowers from './content/flowers.json';
 import { turn } from './game/flowers.js';
 
@@ -112,6 +114,9 @@ function drawMelody(pitch) {
 }
 
 // ---- state
+let mode = 'chat'; // 'chat': free talk with the otter (Claude + ElevenLabs); 'test': scripted accent test
+let chat = newChat();
+let lastOtterLine = null;
 let index = 0;
 let trust = 30;
 let scores = [];
@@ -138,6 +143,123 @@ function showItem(i) {
   attempt = 0;
   live.show(item.audio);
   popIn($('prompt'));
+}
+
+// ---- free talk: say anything; the otter (Claude) answers in his ElevenLabs voice and decides how far
+// he trusts you. Speech-to-text runs on the server (ElevenLabs Scribe), so any browser with a mic works.
+const MAX_CHAT_TURNS = 8;
+const MIN_ANSWER_BYTES = 2000; // shorter than this is a tap, not speech
+const CHAT_OPENERS = ['Aye, how’s it gaun?', 'Ah’m jist oot fur ma messages.', 'Fancy a wee Irn-Bru?'];
+const THINKING = [
+  { text: 'Hmm... let me think aboot that.', audio: 'assets/audio/scotland/think-1.mp3' },
+  { text: 'Mmm-hmm... is that right, aye?', audio: 'assets/audio/scotland/think-2.mp3' },
+  { text: 'Oh aye? Go on...', audio: 'assets/audio/scotland/think-3.mp3' },
+  { text: 'Hmmm. We’ll see aboot that.', audio: 'assets/audio/scotland/think-4.mp3' },
+];
+const OUTCOME_NOTE = {
+  local: 'The Devin Otter says you’re a real Glaswegian!',
+  busted: 'Busted! The otter spotted the tourist.',
+  out_of_time: 'The otter has to get his messages.',
+};
+
+function showIntro() {
+  $('bubble').classList.remove('show');
+  stage.react('idle');
+  show('intro');
+  popIn($('intro').querySelector('.popup'));
+}
+
+function showChatPanel() {
+  $('step').textContent = `Turn ${Math.min(chat.turn + 1, MAX_CHAT_TURNS)} / ${MAX_CHAT_TURNS}`;
+  $('level').textContent = 'Free talk';
+  $('line').textContent = 'Convince the otter you’re a real Glaswegian';
+  $('meaning').textContent = `Say anything. Try: “${CHAT_OPENERS[chat.turn % CHAT_OPENERS.length]}”`;
+  $('melody').classList.remove('show');
+  live.hide();
+}
+
+function readyToTalk(note) {
+  if (note !== undefined) $('heard').textContent = note;
+  busy = false;
+  setTalk(true, 'Hold to talk');
+}
+
+async function startChat() {
+  mode = 'chat';
+  $('again-line').hidden = false;
+  $('speaker').textContent = place.character.name;
+  chat = newChat();
+  streak = 0;
+  setTrust(START_TRUST);
+  show('test');
+  busy = true;
+  setTalk(false, 'Listen...');
+  showChatPanel();
+  $('heard').textContent = '';
+  $('tip').textContent = '';
+  popIn($('prompt'));
+  stage.react('suspicious');
+  await new Promise((res) => setTimeout(res, 700)); // a beat: he sizes you up before speaking
+  lastOtterLine = place.character.intro;
+  await otterSays(lastOtterLine, 'suspicious');
+  readyToTalk();
+}
+
+// blob: the recorded answer, transcribed by ElevenLabs Scribe on the server.
+async function chatTurn(blob) {
+  if (!blob || blob.size < MIN_ANSWER_BYTES) return readyToTalk('Hold the button down while you talk.');
+  $('heard').textContent = 'You: …';
+  setTalk(false, 'The otter is thinking...');
+  // Send first, then fill the wait with a thinking line while the answer is on its way.
+  const pending = blobToBase64(blob)
+    .then((audio) => askOtter(chat, { audio, audioType: blob.type }))
+    .then(
+      (value) => ({ value }),
+      (error) => ({ error }),
+    );
+  await otterSays(THINKING[Math.floor(Math.random() * THINKING.length)], 'suspicious');
+  stage.react('suspicious');
+  const { value: answer, error } = await pending;
+  if (error) {
+    console.warn('[chat] /api/otter failed:', error.message);
+    await otterSays({ text: 'Sorry pal, couldnae hear ye ower the rain. Say that again?' }, 'ok');
+    return readyToTalk('');
+  }
+  const said = answer.heard || '';
+  $('heard').textContent = said ? `You: “${said}”` : 'The otter didn’t catch that...';
+  chat = applyTurn(chat, said, answer);
+  setTrust(answer.trust);
+  const kind = answer.delta >= 8 ? 'good' : answer.delta >= 0 ? 'ok' : 'bad';
+  sfx(kind);
+  floatPop(`${answer.delta >= 0 ? '+' : ''}${answer.delta} trust`, kind === 'ok' ? '' : kind);
+  streak = kind === 'good' ? streak + 1 : 0;
+  if (streak >= 2) floatPop(`Streak x${streak}!`, 'streak', 250);
+  $('tip').textContent = answer.hint ? `Tip: ${answer.hint}` : '';
+  showChatPanel();
+  lastOtterLine = lineFrom(answer);
+  await otterSays(lastOtterLine, answer.mood);
+  if (answer.outcome !== 'continue') {
+    await new Promise((res) => setTimeout(res, 600));
+    await finishChat(answer.outcome);
+    return;
+  }
+  readyToTalk();
+}
+
+async function finishChat(outcome) {
+  const average = trust / 100;
+  const p = placement([average], place.path);
+  $('bubble').classList.remove('show');
+  showResult(average, p.level);
+  $('result-note').textContent = `${OUTCOME_NOTE[outcome] ?? ''} ${$('result-note').textContent}`.trim();
+  stage.react(p.index >= 2 ? 'good' : 'ok');
+  if (p.level.celebration) {
+    setBed('off');
+    await say(p.level.celebration);
+    setBed('full');
+  } else {
+    sfx('level');
+  }
 }
 
 async function startTest() {
@@ -168,6 +290,14 @@ async function presentItem() {
 
 async function replayLine() {
   if (busy || session) return;
+  if (mode === 'chat') {
+    if (!lastOtterLine) return;
+    sfx('tap');
+    busy = true;
+    setTalk(false, 'Listen...');
+    await otterSays(lastOtterLine, 'talk');
+    return readyToTalk();
+  }
   const item = place.test[index];
   sfx('tap');
   busy = true;
@@ -185,7 +315,6 @@ function setTalk(enabled, label) {
 }
 
 // ---- free talk: sell Morag some flowers (src/content/flowers.json)
-let mode = 'test';
 let talkState = null;
 
 function showStep(stuck = false) {
@@ -257,10 +386,31 @@ function beginTalk() {
   $('talk-label').textContent = 'Listening...';
   $('heard').textContent = '';
   stage.react('idle');
+  if (mode === 'chat') {
+    const recording = startRecording();
+    recording.catch(() => {}); // handled in endChatTalk
+    session = { recording };
+    live.start().then(() => $('match').classList.remove('show')); // mic ring + otter leaning in
+    return;
+  }
   live.start();
   if (mode === 'flowers') live.hide(); // no reference clip here: keep the mic ring, drop "Match %"
   const item = place.test[index];
   session = mode === 'flowers' ? listen() : listen({ expected: item.accepted.concat(item.line), referenceUrl: item.audio });
+}
+
+async function endChatTalk(recording) {
+  let blob = null;
+  try {
+    blob = await (await recording).stop();
+  } catch (err) {
+    setBed('full');
+    const denied = err?.name === 'NotAllowedError' || err?.name === 'SecurityError';
+    console.warn('[chat] recording failed:', err?.name, err?.message);
+    return readyToTalk(denied ? 'Allow the microphone to play.' : 'Could not use the microphone. Check your mic settings.');
+  }
+  setBed('full');
+  await chatTurn(blob);
 }
 
 async function endTalk() {
@@ -271,6 +421,7 @@ async function endTalk() {
   live.stop();
   busy = true;
   setTalk(false, 'Hmm...');
+  if (s.recording) return endChatTalk(s.recording);
   s.stop();
   const r = await s.result;
   setBed('full');
@@ -346,8 +497,22 @@ $('play').addEventListener('click', () => {
 });
 document.querySelector('.pin.live').addEventListener('click', () => {
   sfx('tap');
+  // Free talk only needs a mic recorder (speech-to-text runs on the server), so most browsers work.
+  if (!navigator.mediaDevices?.getUserMedia || !globalThis.MediaRecorder) {
+    alert('This browser cannot use the microphone. Please open the game in Chrome, Edge, Safari or Firefox.');
+    return;
+  }
+  showIntro();
+});
+$('intro-start').addEventListener('click', () => {
+  sfx('tap');
+  startChat();
+});
+$('intro-test').addEventListener('click', () => {
+  sfx('tap');
+  // The scripted test uses the browser's speech recognition, which only works in Google Chrome.
   if (!isSupported()) {
-    alert('Please open this in Google Chrome so the game can hear you.');
+    alert('The accent test needs Google Chrome. Free talk works in this browser.');
     return;
   }
   startTest();
@@ -363,7 +528,8 @@ $('pin-flowers').addEventListener('click', () => {
 });
 $('again').addEventListener('click', () => {
   sfx('tap');
-  if (mode === 'flowers') startFlowers();
+  if (mode === 'chat') startChat();
+  else if (mode === 'flowers') startFlowers();
   else startTest();
 });
 $('to-map').addEventListener('click', () => {
