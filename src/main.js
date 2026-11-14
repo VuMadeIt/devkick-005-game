@@ -182,9 +182,11 @@ function collectWords(text) {
 // the server; this is only so you see your words land as you say them. Skipped on touch devices, where
 // the browser's recognizer can fight the recorder for the mic.
 const Recognition = globalThis.SpeechRecognition || globalThis.webkitSpeechRecognition;
+const CAPTIONS_FROM_CHROME = false;
 let captions = null;
 function startCaptions() {
-  if (!Recognition || matchMedia('(pointer: coarse)').matches) return;
+  // Off: Sadman wants ElevenLabs as the only ears, so Chrome's guesses never show or count.
+  if (CAPTIONS_FROM_CHROME !== true || !Recognition || matchMedia('(pointer: coarse)').matches) return;
   try {
     const rec = new Recognition();
     rec.lang = 'en-GB';
@@ -710,9 +712,8 @@ $('cast-back').addEventListener('click', () => {
 });
 $('intro-test').addEventListener('click', () => {
   sfx('tap');
-  // The scripted test uses the browser's speech recognition, which only works in Google Chrome.
   if (!isSupported()) {
-    alert("Prove You're Local needs Google Chrome. Free talk works in this browser.");
+    alert('This browser cannot record the microphone. Try Chrome, Safari or Edge.');
     return;
   }
   startTest();
@@ -722,7 +723,7 @@ $('again-line').addEventListener('click', replayLine);
 $('intro-flowers').addEventListener('click', () => {
   sfx('tap');
   if (!isSupported()) {
-    alert('Please open this in Google Chrome so the game can hear you.');
+    alert('This browser cannot record the microphone. Try Chrome, Safari or Edge.');
     return;
   }
   startFlowers();
