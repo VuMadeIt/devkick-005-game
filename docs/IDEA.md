@@ -1,6 +1,6 @@
 # The idea
 
-**Accent trainer** (working title). Full draft plan: [PLAN.md](PLAN.md). The idea owner's detailed plan replaces this when it's ready.
+**Accent trainer** (working title). **Current: [MVP.md](MVP.md)** (from the idea owner's doc). Older draft: [PLAN.md](PLAN.md).
 
 - **One line:** travel the world and learn local accents by talking into the game; Duolingo for accents.
 - **Chroma category:** Experimental & Open Format (recommended) or Interactive Narrative. Not decided.
