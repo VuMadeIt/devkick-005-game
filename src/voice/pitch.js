@@ -53,7 +53,11 @@ export function semitones(hz) {
   const v = hz.filter((f) => f > 0);
   if (!v.length) return [];
   const med = [...v].sort((a, b) => a - b)[v.length >> 1];
-  return v.map((f) => Math.max(-12, Math.min(12, 12 * Math.log2(f / med))));
+  return v.map((f) => {
+    const s = 12 * Math.log2(f / med);
+    // a jump of 9+ semitones is almost always YIN locking onto the octave, not the voice
+    return Math.max(-12, Math.min(12, Math.abs(s) > 9 ? s - 12 * Math.sign(s) : s));
+  });
 }
 
 export function resample(a, n = POINTS) {
@@ -89,7 +93,7 @@ function envelope(rms) {
 
 const toScore = (dist, good, bad) => Math.max(0, Math.min(1, (bad - dist) / (bad - good)));
 
-// shortcut: good/bad distances are guesses from synthetic tones, retune on real otter + player clips.
+// shortcut: cut-offs tuned on TTS + one otter mp3 (lane 1: >= 0.7 is "good"), retune on real players.
 export function accent(youSamples, refSamples, sr) {
   const y = contour(youSamples, sr);
   const r = contour(refSamples, sr);
@@ -97,9 +101,11 @@ export function accent(youSamples, refSamples, sr) {
   const rs = semitones(r.hz);
   if (ys.length < 10 || rs.length < 10) return null;
   const pitch = { you: resample(ys), ref: resample(rs) };
-  const melody = toScore(dtw(pitch.you, pitch.ref), 0.7, 2.5);
+  // Melody distance relative to a flat voice on this clip (= mean |ref|), so an expressive otter isn't harsher.
+  const flat = Math.max(1, pitch.ref.reduce((s, x) => s + Math.abs(x), 0) / POINTS);
+  const melody = toScore(dtw(pitch.you, pitch.ref) / flat, 0.5, 1.1);
   const ye = envelope(y.rms);
   const re = envelope(r.rms);
-  const rhythm = toScore(ye.reduce((s, x, i) => s + Math.abs(x - re[i]), 0) / POINTS, 0.1, 0.4);
+  const rhythm = toScore(ye.reduce((s, x, i) => s + Math.abs(x - re[i]), 0) / POINTS, 0.15, 0.45);
   return { accentScore: 0.7 * melody + 0.3 * rhythm, pitch };
 }

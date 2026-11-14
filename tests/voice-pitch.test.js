@@ -33,7 +33,11 @@ describe('pitch detection', () => {
 
 describe('normalisation', () => {
   it('drops unvoiced frames and centres on the median', () => {
-    expect(semitones([0, 100, 200, 0, 400])).toEqual([-12, 0, 12]);
+    expect(semitones([0, 200 * 2 ** (-5 / 12), 200, 0, 200 * 2 ** (7 / 12)]).map(Math.round)).toEqual([-5, 0, 7]);
+  });
+
+  it('folds octave errors back onto the voice', () => {
+    expect(semitones([200, 200, 400, 200]).map(Math.round)).toEqual([0, 0, 0, 0]);
   });
 
   it('resamples to a fixed length', () => {
