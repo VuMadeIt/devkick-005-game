@@ -11,28 +11,70 @@ export function createStage(container) {
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#9fc6e8');
-  scene.fog = new THREE.Fog('#9fc6e8', 18, 45);
+  scene.background = new THREE.Color('#b9c3cc'); // overcast Glasgow sky (Rosebud skybox replaces it)
+  scene.fog = new THREE.Fog('#b9c3cc', 14, 40);
   const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(0, 1.2, 7);
   camera.lookAt(0, 0.4, 0); // otter sits in the upper half, clear of the prompt card
 
-  scene.add(new THREE.HemisphereLight('#ffffff', '#5b7a4a', 1.6));
-  const sun = new THREE.DirectionalLight('#fff4dd', 2);
+  scene.add(new THREE.HemisphereLight('#f4f1ea', '#5d5a57', 1.7));
+  const sun = new THREE.DirectionalLight('#fff1dc', 1.6);
   sun.position.set(4, 8, 5);
   scene.add(sun);
 
-  // Rolling green hills + distant purple mountains (Highlands placeholder)
-  const grass = new THREE.MeshStandardMaterial({ color: '#6fa85a', flatShading: true });
-  const hill = new THREE.Mesh(new THREE.SphereGeometry(30, 32, 16), grass);
-  hill.position.set(0, -29.6, 0);
-  scene.add(hill);
-  const mountMat = new THREE.MeshStandardMaterial({ color: '#7b6f9e', flatShading: true });
-  for (const [x, z, h] of [[-12, -22, 7], [-4, -26, 9], [7, -24, 8], [15, -20, 6]]) {
-    const m = new THREE.Mesh(new THREE.ConeGeometry(h * 0.9, h, 6), mountMat);
-    m.position.set(x, h / 2 - 1.5, z);
-    scene.add(m);
+  // Low-poly Glasgow street placeholder (Sadman's Meshy/Blender glasgow.glb replaces it)
+  const street = new THREE.Group();
+  const flat = (color) => new THREE.MeshStandardMaterial({ color, flatShading: true });
+  const road = new THREE.Mesh(new THREE.BoxGeometry(60, 0.2, 60), flat('#4a4d52'));
+  road.position.y = -0.1;
+  const pavement = new THREE.Mesh(new THREE.BoxGeometry(60, 0.3, 4), flat('#9a958c'));
+  pavement.position.set(0, -0.05, 0.5);
+  street.add(road, pavement);
+  // tenement row behind the otter: red and blond sandstone, 4 storeys, bay windows
+  const stone = ['#a0473a', '#c9a46c', '#8f3f34', '#d1b07a', '#9c4a3b'];
+  const glass = flat('#3a4a5a');
+  for (let i = 0; i < 7; i += 1) {
+    const x = (i - 3) * 6.2;
+    const b = new THREE.Mesh(new THREE.BoxGeometry(6, 11, 4), flat(stone[i % stone.length]));
+    b.position.set(x, 5.5, -5);
+    street.add(b);
+    for (let f = 0; f < 4; f += 1) {
+      for (const wx of [-1.8, 0, 1.8]) {
+        const w = new THREE.Mesh(new THREE.BoxGeometry(1, 1.4, 0.1), glass);
+        w.position.set(x + wx, 1.6 + f * 2.5, -2.95);
+        street.add(w);
+      }
+    }
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.5, 4.2), flat('#3b3a40'));
+    roof.position.set(x, 11.2, -5);
+    street.add(roof);
   }
+  // lamp posts
+  for (const x of [-4.5, 4.5]) {
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 3.2, 6), flat('#2b2e33'));
+    pole.position.set(x, 1.6, 1.6);
+    const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), flat('#ffe7a6'));
+    lamp.position.set(x, 3.3, 1.6);
+    street.add(pole, lamp);
+  }
+  // the statue with the traffic cone (Glasgow's best-known joke)
+  const plinth = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.6, 1.4), flat('#7d7a74'));
+  plinth.position.set(-6.5, 0.8, -1.5);
+  const rider = new THREE.Mesh(new THREE.CapsuleGeometry(0.35, 0.9, 4, 8), flat('#4e5a52'));
+  rider.position.set(-6.5, 2.3, -1.5);
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.6, 8), flat('#f26b21'));
+  cone.position.set(-6.5, 3.3, -1.5);
+  street.add(plinth, rider, cone);
+  scene.add(street);
+  new GLTFLoader().load(
+    'assets/models/glasgow.glb',
+    (gltf) => {
+      scene.remove(street);
+      scene.add(gltf.scene);
+    },
+    undefined,
+    () => {},
+  );
 
   // Placeholder otter built from primitives
   const otter = new THREE.Group();
