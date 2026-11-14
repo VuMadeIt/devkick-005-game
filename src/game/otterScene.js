@@ -2,6 +2,7 @@
 // If public/assets/models/otter.glb exists it replaces the placeholder automatically.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { createLoop } from './loop.js';
 
@@ -105,7 +106,7 @@ export function createStage(container) {
   cone.position.set(-6.5, 3.3, -1.5);
   street.add(plinth, rider, cone);
   scene.add(street);
-  new GLTFLoader().load(
+  new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load(
     'assets/models/glasgow.glb',
     (gltf) => {
       scene.remove(street);
