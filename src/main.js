@@ -42,6 +42,8 @@ function show(id) {
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === id));
   // 2D screens (title, map, result, lessons) cover the 3D street; the otter test shows it
   document.body.classList.toggle('flat', $(id).classList.contains('flat'));
+  // after free-talk practice, offer the test straight away
+  if (id === 'result') $('result-test').hidden = mode === 'test';
 }
 
 // Placement: a good accent test skips you 50 lessons ahead, otherwise you start at lesson 1.
@@ -517,6 +519,8 @@ $('intro-test').addEventListener('click', () => {
   }
   startTest();
 });
+$('intro-flowers').addEventListener('click', () => $('pin-flowers').click());
+$('result-test').addEventListener('click', () => $('intro-test').click());
 $('again-line').addEventListener('click', replayLine);
 $('pin-flowers').addEventListener('click', () => {
   sfx('tap');
