@@ -1,0 +1,16 @@
+{
+  "_readme": "Every generated asset goes here: what it is, the tool, the exact prompt, who made it, and the file. This is our proof for the Chroma tool awards (Meshy, ElevenLabs, Rosebud).",
+  "models": [],
+  "audio": [],
+  "images": [],
+  "_example": {
+    "id": "hero-fighter",
+    "file": "public/assets/models/hero-fighter.glb",
+    "tool": "Meshy text-to-3D (Pro)",
+    "prompt": "chunky rounded toy fighter, bright colours, low poly, T-pose",
+    "reference": "public/assets/images/style-ref.png",
+    "made_by": "name",
+    "date": "2026-11-14",
+    "notes": "rigged in Meshy; scaled to 1.2 units tall"
+  }
+}
