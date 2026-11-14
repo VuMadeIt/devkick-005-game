@@ -37,6 +37,18 @@ describe('flower stall', () => {
     expect(turn(scene, { ...s, node: 'price' }, 'just for quit for you 10').reply).toMatch(/no bad/);
   });
 
+  it('reacts to topics on any step and quotes you when lost', () => {
+    const s = { node: 'offer', mood: 40, turns: 0 };
+    expect(turn(scene, s, 'heather for yer gran hen').aside).toMatch(/nice/);
+    expect(turn(scene, s, "I'm from London").state.mood).toBeLessThan(turn(scene, s, "I'm fae Glasgow").state.mood);
+    expect(turn(scene, s, 'the weather in Spain').reply).toMatch(/^"the weather in Spain"\?/);
+  });
+
+  it('lets you jump ahead a step (real transcript)', () => {
+    const r = turn(scene, { node: 'price', mood: 60, turns: 0 }, "it's my last Bunch it brings good luck");
+    expect(r.ending).toBe('buy');
+  });
+
   it('she leaves if you talk nonsense', () => {
     const r = play(['banana', 'the weather in london', 'spaceship']);
     expect(r.ending).toBe('walk');

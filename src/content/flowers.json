@@ -52,6 +52,12 @@
       ]
     }
   },
+  "topics": [
+    { "words": ["london", "england", "english", "america", "american", "tourist", "holiday", "visiting", "on vacation"], "mood": -8, "reply": "Oh aye? A visitor, is it." },
+    { "words": ["glasgow", "glesga", "weegie", "irn bru", "iron brew", "buchanan", "clyde"], "mood": 8, "reply": "Ha! A Glesga yin!" },
+    { "words": ["gran", "grand", "granny", "maw", "mum", "mother", "wife", "girlfriend", "pal's"], "mood": 6, "reply": "Aw, that's nice, that." },
+    { "words": ["please", "thank you", "thanks", "cheers", "ta"], "mood": 3, "reply": "Manners an' aw." }
+  ],
   "asides": {
     "warm": ["Ha, no bad.", "Ye sound like ma cousin.", "Aye, that's mair like it."],
     "cold": ["Hmph. Where are you fae?", "Ye talk like a guidebook.", "Mm. Ye're no fae roon here."],

@@ -166,12 +166,12 @@ async function presentItem() {
 }
 
 async function replayLine() {
-  if (busy || session || mode !== 'test') return;
+  if (busy || session) return;
   const item = place.test[index];
   sfx('tap');
   busy = true;
   setTalk(false, 'Listen...');
-  await otterSays({ text: `"${item.line}"`, audio: item.audio ? item.audio : null });
+  await otterSays(mode === 'flowers' ? { text: $('bubble-text').textContent } : { text: `"${item.line}"`, audio: item.audio ? item.audio : null });
   busy = false;
   setTalk(true, attempt ? 'Try again' : 'Hold to talk');
 }
@@ -202,10 +202,9 @@ async function startFlowers() {
   mode = 'flowers';
   talkState = { node: flowers.start, mood: flowers.mood, turns: 0 };
   $('speaker').textContent = flowers.character.name;
+  live.hide();
   setTrust(talkState.mood);
   show('test');
-  live.hide();
-  $('again-line').hidden = true;
   showStep();
   $('heard').textContent = '';
   busy = true;
@@ -257,8 +256,9 @@ function beginTalk() {
   $('talk-label').textContent = 'Listening...';
   $('heard').textContent = '';
   stage.react('idle');
+  live.start();
+  if (mode === 'flowers') live.hide(); // no reference clip here: keep the mic ring, drop "Match %"
   const item = place.test[index];
-  if (mode === 'test') live.start();
   session = mode === 'flowers' ? listen() : listen({ expected: item.accepted.concat(item.line), referenceUrl: item.audio });
 }
 
