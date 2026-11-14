@@ -15,7 +15,7 @@ const result = await session.result;
 ```
 
 ## What's there now
-- Browser speech recognition (Chrome's `webkitSpeechRecognition`) for the transcript.
+- ElevenLabs speech-to-text on the server (`POST /api/stt`) for the transcript. Chrome's own recognition is not used (Sadman, Nov 14: it drops Scots words like "aye").
 - `wordScore` = best fuzzy match of the transcript against `expected`.
 - `accentScore` (`pitch.js`): mic recorded with `MediaRecorder`, mic + `referenceUrl` decoded at 16 kHz, YIN pitch
   every 10 ms, semitones around each speaker's median, DTW on 60-point contours (70%) + loudness timing (30%).
