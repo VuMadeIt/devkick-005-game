@@ -514,7 +514,7 @@ $('intro-test').addEventListener('click', () => {
   sfx('tap');
   // The scripted test uses the browser's speech recognition, which only works in Google Chrome.
   if (!isSupported()) {
-    alert('The accent test needs Google Chrome. Free talk works in this browser.');
+    alert("Prove You're Local needs Google Chrome. Free talk works in this browser.");
     return;
   }
   startTest();
