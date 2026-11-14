@@ -14,10 +14,13 @@ const result = await session.result;
 // every score is 0..1. accentScore is null if it couldn't be measured. score = the one to use.
 ```
 
-## What's there now (working fallback)
+## What's there now
 - Browser speech recognition (Chrome's `webkitSpeechRecognition`) for the transcript.
 - `wordScore` = best fuzzy match of the transcript against `expected`.
-- `accentScore` = null, `score` = wordScore.
+- `accentScore` (`pitch.js`): mic recorded with `MediaRecorder`, mic + `referenceUrl` decoded at 16 kHz, YIN pitch
+  every 10 ms, semitones around each speaker's median, DTW on 60-point contours (70%) + loudness timing (30%).
+- `score` = 0.5 * wordScore + 0.5 * accentScore. No mic, missing/bad clip or too little voice: `accentScore` and
+  `pitch` are null, `score` = wordScore.
 
 ## What lane 2 adds
 1. Record the mic with `getUserMedia` + Web Audio while recognition runs.
