@@ -318,6 +318,23 @@ function showCast() {
   popIn($('cast').querySelector('.popup'));
 }
 
+// Suggestions for the very first answer (the otter's opening line is pre-recorded, so the AI hasn't
+// written any yet), and for anyone whose greeting didn't load.
+const OPENING_SUGGESTIONS = {
+  otter: [
+    { say: "Aye, how's it gaun, pal?", means: "Yes, how's it going, mate?" },
+    { say: "Ah'm fae Glesga, ya wee numpty!", means: "I'm from Glasgow, you silly thing!" },
+  ],
+  senga: [
+    { say: "Awright hen, a fish supper please", means: "Hi love, fish and chips please" },
+    { say: "Gie us a pizza crunch an' a bottle o' ginger", means: "A deep-fried pizza and a fizzy drink, please" },
+  ],
+  hamish: [
+    { say: "Awright big man, is this the nine?", means: "Hi mate, is this the number 9 bus?" },
+    { say: "Ah'm gaun tae the toon, how much?", means: "I'm going into the city centre, how much?" },
+  ],
+};
+
 // ---- Free talk: "Try saying" cards, written fresh by the character each turn (say + what it means)
 function showSuggestions(list) {
   const box = $('suggest');
@@ -373,6 +390,7 @@ async function startChat(id = npc.id) {
   await new Promise((res) => setTimeout(res, 700)); // a beat: they size you up before speaking
   if (npc.id === 'otter') {
     lastOtterLine = place.character.intro;
+    showSuggestions(OPENING_SUGGESTIONS.otter);
   } else {
     // a fresh greeting in their own voice every time; the written one if the server is slow or down
     $('bubble-text').textContent = '…';
@@ -381,7 +399,7 @@ async function startChat(id = npc.id) {
     const hello = await askOtter(chat, { npc: npc.id, opening: true }, { timeoutMs: 12000 }).catch(() => null);
     lastOtterLine = hello ? lineFrom(hello) : { text: npc.greeting, audio: null };
     if (hello) chat = { ...chat, history: [{ who: 'otter', text: hello.reply }] };
-    showSuggestions(hello?.suggestions);
+    showSuggestions(hello?.suggestions?.length ? hello.suggestions : OPENING_SUGGESTIONS[npc.id]);
   }
   await otterSays(lastOtterLine, 'suspicious');
   readyToTalk();
