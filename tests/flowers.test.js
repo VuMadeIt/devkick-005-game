@@ -44,6 +44,11 @@ describe('flower stall', () => {
     expect(turn(scene, s, 'the weather in Spain').reply).toMatch(/^"the weather in Spain"\?/);
   });
 
+  it('lets you jump ahead a step (real transcript)', () => {
+    const r = turn(scene, { node: 'price', mood: 60, turns: 0 }, "it's my last Bunch it brings good luck");
+    expect(r.ending).toBe('buy');
+  });
+
   it('she leaves if you talk nonsense', () => {
     const r = play(['banana', 'the weather in london', 'spaceship']);
     expect(r.ending).toBe('walk');

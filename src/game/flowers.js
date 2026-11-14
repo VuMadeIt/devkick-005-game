@@ -16,7 +16,9 @@ const pick = (list, i) => list[i % list.length];
 export function turn(scene, state, transcript) {
   const node = scene.nodes[state.node];
   const said = clean(transcript);
-  const intent = node.intents.find((it) => it.words.some((w) => has(said, w)));
+  const hits = (n) => n?.intents.find((it) => it.words.some((w) => has(said, w)));
+  // players jump ahead ("last bunch, brings luck" before naming a price): also try the next step
+  const intent = hits(node) ?? hits(scene.nodes[node.intents[0].next]);
   // topics she reacts to on any step (where you're from, Glasgow, who the flowers are for)
   const topic = scene.topics.find((t) => t.words.some((w) => has(said, w)));
   const local = localness(transcript, scene.localWords);
