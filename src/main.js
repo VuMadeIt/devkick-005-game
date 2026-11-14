@@ -2,7 +2,8 @@
 import './ui/styles.css';
 import scotland from './content/scotland.json';
 import { createStage } from './game/otterScene.js';
-import { say, sfx, setMuted, isMuted, unlockAudio, startBed, setBed } from './game/audio.js';
+import { say, sfx, setMuted, isMuted, unlockAudio, startBed, setBed, setWarmth, chime } from './game/audio.js';
+import { SCOTS_WORDS, findScots } from './game/scotsWords.js';
 import { band, clampTrust, placement, trustDelta } from './game/placement.js';
 import { listen, isSupported } from './voice/index.js';
 import { createLive } from './game/liveVoice.js';
@@ -131,6 +132,79 @@ function setTrust(v) {
   const fill = $('trust-fill');
   fill.style.width = `${trust}%`;
   fill.style.background = trust >= 65 ? 'var(--green)' : trust >= 35 ? 'var(--amber)' : 'var(--red)';
+  stage.setWeather(trust / 100);
+  setWarmth(trust / 100);
+}
+
+// ---- Scots word tray (free talk): words light up with a climbing chime the first time you say them
+let collected = new Set();
+function buildTray() {
+  collected = new Set();
+  const tray = $('scots');
+  tray.innerHTML = '';
+  for (const w of SCOTS_WORDS) {
+    const b = document.createElement('span');
+    b.className = 'word';
+    b.dataset.id = w.id;
+    b.textContent = w.label;
+    b.title = `${w.label} = ${w.means}`;
+    tray.appendChild(b);
+  }
+  updateTrayCount();
+}
+function updateTrayCount() {
+  $('scots').dataset.count = `Scots words ${collected.size} / ${SCOTS_WORDS.length}`;
+}
+// Light every newly said word; returns how many were new.
+function collectWords(text) {
+  const fresh = findScots(text).filter((id) => !collected.has(id));
+  fresh.forEach((id, i) => {
+    collected.add(id);
+    const chip = $('scots').querySelector(`[data-id="${id}"]`);
+    setTimeout(() => {
+      chime(collected.size - fresh.length + i);
+      chip?.classList.add('got');
+      if (chip) popIn(chip);
+      floatPop(`${SCOTS_WORDS.find((w) => w.id === id).label}!`, 'word', 0);
+    }, i * 180);
+  });
+  if (fresh.length) updateTrayCount();
+  return fresh.length;
+}
+
+// ---- live captions while you talk in free talk (Chrome desktop). The real transcript still comes from
+// the server; this is only so you see your words land as you say them. Skipped on touch devices, where
+// the browser's recognizer can fight the recorder for the mic.
+const Recognition = globalThis.SpeechRecognition || globalThis.webkitSpeechRecognition;
+let captions = null;
+function startCaptions() {
+  if (!Recognition || matchMedia('(pointer: coarse)').matches) return;
+  try {
+    const rec = new Recognition();
+    rec.lang = 'en-GB';
+    rec.interimResults = true;
+    rec.continuous = true;
+    rec.onresult = (e) => {
+      const text = [...e.results].map((r) => r[0].transcript).join(' ').trim();
+      if (!text || captions !== rec) return;
+      $('heard').textContent = `You: “${text}”`;
+      collectWords(text);
+    };
+    rec.onerror = () => {};
+    rec.start();
+    captions = rec;
+  } catch {
+    captions = null;
+  }
+}
+function stopCaptions() {
+  const rec = captions;
+  captions = null;
+  try {
+    rec?.stop();
+  } catch {
+    /* already stopped */
+  }
 }
 
 function showItem(i) {
@@ -175,7 +249,10 @@ function showChatPanel() {
   $('step').textContent = `Turn ${Math.min(chat.turn + 1, MAX_CHAT_TURNS)} / ${MAX_CHAT_TURNS}`;
   $('level').textContent = 'Free talk';
   $('line').textContent = 'Convince the otter you’re a real Glaswegian';
-  $('meaning').textContent = `Say anything. Try: “${CHAT_OPENERS[chat.turn % CHAT_OPENERS.length]}”`;
+  $('meaning').textContent = chat.turn
+    ? 'Say anything. Work in Scots words to win him over:'
+    : `Say anything. Try: “${CHAT_OPENERS[0]}”`;
+  $('scots').classList.add('show');
   $('melody').classList.remove('show');
   live.hide();
 }
@@ -192,6 +269,7 @@ async function startChat() {
   $('speaker').textContent = place.character.name;
   chat = newChat();
   streak = 0;
+  buildTray();
   setTrust(START_TRUST);
   show('test');
   busy = true;
@@ -229,6 +307,8 @@ async function chatTurn(blob) {
   }
   const said = answer.heard || '';
   $('heard').textContent = said ? `You: “${said}”` : 'The otter didn’t catch that...';
+  const fresh = collectWords(said);
+  if (fresh >= 2) floatPop(`Patter combo x${fresh}!`, 'streak', 400);
   chat = applyTurn(chat, said, answer);
   setTrust(answer.trust);
   const kind = answer.delta >= 8 ? 'good' : answer.delta >= 0 ? 'ok' : 'bad';
@@ -239,7 +319,9 @@ async function chatTurn(blob) {
   $('tip').textContent = answer.hint ? `Tip: ${answer.hint}` : '';
   showChatPanel();
   lastOtterLine = lineFrom(answer);
-  await otterSays(lastOtterLine, answer.mood);
+  const speaking = otterSays(lastOtterLine, answer.mood);
+  stage.act(answer.action);
+  await speaking;
   if (answer.outcome !== 'continue') {
     await new Promise((res) => setTimeout(res, 600));
     await finishChat(answer.outcome);
@@ -253,7 +335,7 @@ async function finishChat(outcome) {
   const p = placement([average], place.path);
   $('bubble').classList.remove('show');
   showResult(average, p.level);
-  $('result-note').textContent = `${OUTCOME_NOTE[outcome] ?? ''} ${$('result-note').textContent}`.trim();
+  $('result-note').textContent = `${OUTCOME_NOTE[outcome] ?? ''} Scots words: ${collected.size} of ${SCOTS_WORDS.length}. ${$('result-note').textContent}`.trim();
   stage.react(p.index >= 2 ? 'good' : 'ok');
   if (p.level.celebration) {
     setBed('off');
@@ -266,6 +348,7 @@ async function finishChat(outcome) {
 
 async function startTest() {
   mode = 'test';
+  $('scots').classList.remove('show');
   $('again-line').hidden = false;
   $('speaker').textContent = place.character.name;
   index = 0;
@@ -332,6 +415,7 @@ function showStep(stuck = false) {
 
 async function startFlowers() {
   mode = 'flowers';
+  $('scots').classList.remove('show');
   talkState = { node: flowers.start, mood: flowers.mood, turns: 0 };
   $('speaker').textContent = flowers.character.name;
   live.hide();
@@ -392,6 +476,7 @@ function beginTalk() {
     const recording = startRecording();
     recording.catch(() => {}); // handled in endChatTalk
     session = { recording };
+    startCaptions();
     live.start().then(() => $('match').classList.remove('show')); // mic ring + otter leaning in
     return;
   }
@@ -423,7 +508,10 @@ async function endTalk() {
   live.stop();
   busy = true;
   setTalk(false, 'Hmm...');
-  if (s.recording) return endChatTalk(s.recording);
+  if (s.recording) {
+    stopCaptions();
+    return endChatTalk(s.recording);
+  }
   s.stop();
   const r = await s.result;
   setBed('full');
