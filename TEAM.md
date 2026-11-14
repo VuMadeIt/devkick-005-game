@@ -5,9 +5,9 @@ Three people, three lanes.
 
 | Lane | Owner | GitHub | Owns (files) | Issue |
 | --- | --- | --- | --- | --- |
-| 1. Game shell, feel, deploy, demo | Sadman | sadmanc | `src/main.js`, `src/game/`, `src/ui/`, `index.html`, `docs/` | #1 |
-| 2. Voice scoring (accent score) | Vu | VuMadeIt | `src/voice/`, `tests/voice*.test.js` | #2 |
-| 3. Otter voice, sound, Meshy otter | Paul | Paul-JSN | `src/content/`, `public/assets/`, `assets/manifest.json` | #3 |
+| 1. Game shell + art (Devin otter, Glasgow map), deploy, demo | Sadman | sadmanc | `src/main.js`, `src/game/`, `src/ui/`, `index.html`, `public/assets/models/`, `public/assets/images/`, `docs/` | #1 |
+| 2. Voice scoring + Modal backend | Vu | VuMadeIt | `src/voice/`, `backend/`, `tests/voice*.test.js` | #2 |
+| 3. Otter voice, sound, music | Paul | Paul-JSN | `src/content/`, `public/assets/audio/`, `scripts/` | #3 |
 
 Start with the pinned issue #4 (START HERE).
 

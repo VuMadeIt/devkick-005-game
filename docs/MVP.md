@@ -1,11 +1,11 @@
-# MVP for 5pm: "Prove You're Scottish" (v2)
+# MVP for 5pm: "Prove You're Scottish" (v3)
 
-Nov 14, 2026, ~3:10pm. Replaces the London v1 (knife gang dropped; the team picked Scotland + animal local).
+Nov 14, 2026, ~3:10pm. v3 (3:30pm): the local is **the Devin otter** (Devin's mascot, built in Meshy) speaking with a **real Glaswegian accent** (ElevenLabs); the look is **low-poly streets of Glasgow**. Tools for every step: [TOOLS.md](TOOLS.md).
 
 ## Demo flow (~45 s per judge)
 1. **Title** -> Play.
-2. **World map.** Scotland lit and clickable; other places greyed "coming soon".
-3. **The otter test** (this is the diagnostic placement test). A Scottish otter stops you:
+2. **World map.** Glasgow, Scotland lit and clickable; other places greyed "coming soon".
+3. **The otter test** (the diagnostic placement test), on a low-poly Glasgow street. The Devin otter stops you:
    "Ye're no fae roon here, are ye? Prove it." Three lines, easy -> hard. For each:
    - the otter says it (ElevenLabs voice), text + meaning on screen;
    - you hold the talk button and say it back;
@@ -14,12 +14,12 @@ Nov 14, 2026, ~3:10pm. Replaces the London v1 (knife gang dropped; the team pick
 4. **Result:** placed on a Duolingo-style path: Tourist -> Visitor -> Neighbour -> Local. Next lesson glows,
    the rest are locked.
 
-## Lanes (3 people, each with their own Claude Code)
-| Lane | Who | Owns | Delivers |
+## Lanes (3 people)
+| Lane | Who | Tools | Owns |
 | --- | --- | --- | --- |
-| 1. Game shell & scenes | Sadman (+ Claude here) | `src/main.js`, `src/game/`, `index.html`, `src/ui/` | Title, map, test scene, meter, result path, feel, deploy |
-| 2. Voice scoring | teammate | `src/voice/` + `tests/voice*.test.js` | `listen()` per `src/voice/README.md`: mic, speech-to-text match, pitch/rhythm score |
-| 3. Content & assets | teammate | `src/content/`, `public/assets/` | Otter voice lines, reactions, tips, SFX, music (ElevenLabs); otter + scene models (Meshy) |
+| 1. Game shell + art (otter, Glasgow map) + deploy + demo | Sadman | Claude Code, Meshy, Rosebud, ChatGPT/Gemini, Blender, Vercel, OBS | `src/main.js`, `src/game/`, `src/ui/`, `index.html`, `public/assets/models/`, `public/assets/images/` |
+| 2. Voice scoring + backend | Vu | Devin, Claude Code/Cursor, ElevenLabs Scribe, Modal | `src/voice/`, `backend/`, `tests/voice*.test.js` |
+| 3. Voice, sound, music | Paul | ElevenLabs (Voice Design, TTS, SFX, Music), Modal batch script, Cursor/Claude Code | `src/content/`, `public/assets/audio/`, `scripts/` |
 
 The **contracts** below let all three work at once. Lane 1 ships with placeholders and swaps in real voice
 and assets as they land.

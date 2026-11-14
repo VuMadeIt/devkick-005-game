@@ -1,6 +1,6 @@
 # For every teammate's Claude Code (and Devin, Codex)
 
-Read this, then `AGENTS.md` and `docs/MVP.md`. Demo at **5pm today**. Working beats clever.
+Read this, then `AGENTS.md`, `docs/MVP.md` and `docs/TOOLS.md` (which tool does what). Demo at **5pm today**. Working beats clever.
 
 ## Which lane am I?
 Ask your human which lane they own (see `docs/MVP.md`): 1 shell & scenes, 2 voice scoring, 3 content &

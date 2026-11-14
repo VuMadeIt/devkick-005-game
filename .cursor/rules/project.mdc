@@ -1,0 +1,11 @@
+---
+description: Team rules for the devkick 005 accent game (same as CLAUDE.md for Claude Code users)
+alwaysApply: true
+---
+Read CLAUDE.md, AGENTS.md, docs/MVP.md and docs/TOOLS.md before working. Demo at 5pm today; working beats clever.
+- Edit only your lane's files (lanes in TEAM.md and docs/TOOLS.md). Don't change the shape of src/content/scotland.json or listen() in src/voice/index.js without commenting on the other lane's GitHub issue.
+- GitHub issues are how lanes talk: #4 START HERE, #1 game shell/art, #2 voice scoring, #3 voice/sound. Check them every ~20 min with `gh issue view <n> --comments`; ask other lanes with `gh issue comment`.
+- `git pull --rebase` before starting and before every push. Branch per task, small PRs, `npm run check` must pass.
+- Never put API keys in src/ (it ships to players). Keys go in .env for local scripts or in the Modal backend.
+- Log every generated asset (ElevenLabs, Meshy, Rosebud, images) in assets/manifest.json with its exact prompt.
+- Look: low-poly Glasgow streets; the Devin otter speaks with a real Glaswegian accent. Kind, never mocking.
