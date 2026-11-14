@@ -18,6 +18,22 @@
       "made_by": "Sadman (Claude Code driving Meshy in his browser)",
       "date": "2026-11-14",
       "notes": "30,960 tris, 4.5 MB; raw Meshy download kept locally in art/meshy/ (not committed, 21 MB); v2 adds Meshy Idle 1 (Idle_02). Face (brows, blinks, voice-driven mouth, blush) is code: src/game/expressions.js"
+    },
+    {
+      "id": "npc-hamish",
+      "file": "public/assets/models/cow.glb",
+      "tool": "Meshy 7.1 image-to-3D (Ultra 2K, A-pose) -> remesh 30K -> humanoid rig + animations (Idle_02, Talk with Hands Open, Victory Cheer, Shrug, Stand Talking Angry); textures to 1024 JPEG in Blender (art/blender/npc_web.py)",
+      "reference": "art/npcs/cow.png",
+      "date": "2026-11-14",
+      "credits": "35 Meshy credits"
+    },
+    {
+      "id": "npc-senga",
+      "file": "public/assets/models/seagull.glb",
+      "tool": "Meshy 7.1 image-to-3D (Ultra 2K, A-pose) -> remesh 30K; auto-rig failed 3 times (short legs, wings), so static; textures to 1024 JPEG in Blender (art/blender/npc_web.py)",
+      "reference": "art/npcs/seagull.png",
+      "date": "2026-11-14",
+      "credits": "35 Meshy credits"
     }
   ],
   "audio": [
@@ -265,6 +281,20 @@
       },
       "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv)",
       "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "voice-senga",
+      "voice_id": "U8lGdXfIYVx0Nas6m5XL",
+      "tool": "ElevenLabs Voice Design on Sadman's account",
+      "note": "see art/npcs/voices.json",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "voice-hamish",
+      "voice_id": "KnVW5icoKhKlU7DbTW8i",
+      "tool": "ElevenLabs Voice Design on Sadman's account",
+      "note": "see art/npcs/voices.json",
       "date": "2026-11-14"
     }
   ],
