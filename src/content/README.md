@@ -8,7 +8,9 @@ One JSON file per place. `scotland.json` is the MVP.
   - `accepted`: lowercase ways speech-to-text may hear it (it will hear Scots words as English ones),
   - `audio`: the otter saying the line; this is also the **reference** the accent score compares against,
   - `reactions.good|ok|bad`: what the otter says back.
-- `path[]`: placement levels with the minimum average score (0-1).
+- `path[]`: placement levels with the minimum average score (0-1). Each has a `celebration`
+  `{ text, audio }`: the otter cheering over a victory sting, bigger for higher levels. Play it on the
+  result screen with `say(level.celebration)`. Made with `scripts/mix-celebration.sh`.
 
 Audio paths are relative to `public/`. Until a file exists the game falls back to the browser's
 built-in voice, so missing audio never breaks the demo. Keep lines short (under 3 s), everyday and kind.

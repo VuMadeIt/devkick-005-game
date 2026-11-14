@@ -199,6 +199,54 @@
       "prompt": "3-second instrumental victory sting. A bright, joyful Scottish fiddle flourish rising to a final chord with acoustic guitar strum and a cymbal swell, triumphant and warm, no vocals.",
       "made_by": "Paul",
       "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-result-tourist",
+      "file": "public/assets/audio/scotland/result-tourist.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3) + ElevenLabs Music (eleven_music_v2_5), mixed with scripts/mix-celebration.sh (ffmpeg, the music ducks under the voice)",
+      "prompt": {
+        "voice": "[laughs] Och, ye're a wee tourist! Nae bother, we'll sort ye oot.",
+        "music": "5-second light, playful encouraging jingle, instrumental, no vocals. A cheeky plucked fiddle and ukulele-style acoustic guitar figure with a soft kick drum, warm and friendly, ending on a bright cheerful chord. Gentle, not triumphant."
+      },
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv)",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-result-visitor",
+      "file": "public/assets/audio/scotland/result-visitor.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3) + ElevenLabs Music (eleven_music_v2_5), mixed with scripts/mix-celebration.sh (ffmpeg, the music ducks under the voice)",
+      "prompt": {
+        "voice": "[cheerful] No bad at all, pal! Ye're a proper visitor noo.",
+        "music": "5-second upbeat happy celebration sting, instrumental, no vocals. A bouncy Scottish fiddle melody over strummed acoustic guitar, clapping and a light drum groove, rising to a bright major chord. Cheerful and warm, medium energy."
+      },
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv)",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-result-neighbour",
+      "file": "public/assets/audio/scotland/result-neighbour.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3) + ElevenLabs Music (eleven_music_v2_5), mixed with scripts/mix-celebration.sh (ffmpeg, the music ducks under the voice)",
+      "prompt": {
+        "voice": "[excited] Get in! Good job, mate! Ye could be ma neighbour!",
+        "music": "6-second big triumphant victory fanfare, instrumental, no vocals. Punchy drum hit, a fast joyful Scottish fiddle run, then the full band: brass stabs, strummed guitar, booming bass drum and crashing cymbals, landing on a huge sustained major chord. High energy, celebratory."
+      },
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv)",
+      "made_by": "Paul",
+      "date": "2026-11-14"
+    },
+    {
+      "id": "scotland-result-local",
+      "file": "public/assets/audio/scotland/result-local.mp3",
+      "tool": "ElevenLabs TTS (eleven_v3) + ElevenLabs Music (eleven_music_v2_5), mixed with scripts/mix-celebration.sh (ffmpeg, the music ducks under the voice)",
+      "prompt": {
+        "voice": "[shouting] Ya dancer! [laughs] Ye're a pure Glaswegian, so ye are!",
+        "music": "7-second epic over-the-top Scottish victory anthem, instrumental, no vocals. Thundering marching snare roll and big bass drums, a soaring Highland pipe melody with fiddles and full brass, a cymbal crash and a massive final chord with a shimmering tail. Euphoric, stadium-sized, the ultimate win."
+      },
+      "voice": "Devin Otter (Glaswegian) (9wOu10b6k3SOUgwDbKKv)",
+      "made_by": "Paul",
+      "date": "2026-11-14"
     }
   ],
   "images": [],

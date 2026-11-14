@@ -24,4 +24,11 @@ describe('voice line jobs', () => {
     const missing = collectLines(scotland).filter((l) => !existsSync(`public/${l.audio}`));
     expect(missing).toEqual([]);
   });
+
+  it('has a celebration line and mp3 for every placement level', () => {
+    for (const level of scotland.path) {
+      expect(level.celebration?.text).toBeTruthy();
+      expect(existsSync(`public/${level.celebration.audio}`)).toBe(true);
+    }
+  });
 });
