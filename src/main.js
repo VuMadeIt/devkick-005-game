@@ -275,6 +275,21 @@ function showChatPanel() {
   live.hide();
 }
 
+// ---- Ask for the microphone as soon as a conversation starts (while the character is still talking),
+// not on the first hold of Talk: otherwise the browser's permission popup eats the player's first answer.
+// Once allowed, it just works; no page refresh needed.
+let micReady = false;
+async function primeMic() {
+  if (micReady || !navigator.mediaDevices?.getUserMedia) return;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach((t) => t.stop());
+    micReady = true;
+  } catch {
+    $('heard').textContent = 'Allow the microphone (the mic or lock icon by the address bar), then hold Talk. No need to refresh.';
+  }
+}
+
 // ---- the street: pick who to talk to
 function showCast() {
   $('bubble').classList.remove('show');
@@ -309,6 +324,7 @@ function readyToTalk(note) {
 
 async function startChat(id = npc.id) {
   mode = 'chat';
+  primeMic();
   npc = cast[id] ?? cast.otter;
   pendingEcho = null;
   $('again-line').hidden = false;
@@ -432,6 +448,7 @@ async function finishChat(outcome) {
 
 async function startTest() {
   mode = 'test';
+  primeMic();
   $('again').textContent = 'Try again';
   $('scots').classList.remove('show');
   $('again-line').hidden = false;
@@ -501,6 +518,7 @@ function showStep(stuck = false) {
 
 async function startFlowers() {
   mode = 'flowers';
+  primeMic();
   $('again').textContent = 'Try again';
   $('scots').classList.remove('show');
   talkState = { node: flowers.start, mood: flowers.mood, turns: 0 };
@@ -519,7 +537,7 @@ async function startFlowers() {
 
 async function talkTurn(r) {
   if (!r.transcript) {
-    $('heard').textContent = r.error === 'not-allowed' ? 'Allow the microphone to play.' : "Didn't catch that. Hold the button while you speak.";
+    $('heard').textContent = r.error === 'not-allowed' ? 'Allow the microphone (the mic or lock icon by the address bar), then hold Talk again. No need to refresh.' : "Didn't catch that. Hold the button while you speak.";
     busy = false;
     setTalk(true, 'Try again');
     return;
@@ -582,7 +600,7 @@ async function endChatTalk(recording) {
     setBed('full');
     const denied = err?.name === 'NotAllowedError' || err?.name === 'SecurityError';
     console.warn('[chat] recording failed:', err?.name, err?.message);
-    return readyToTalk(denied ? 'Allow the microphone to play.' : 'Could not use the microphone. Check your mic settings.');
+    return readyToTalk(denied ? 'Allow the microphone (the mic or lock icon by the address bar), then hold Talk again. No need to refresh.' : 'Could not use the microphone. Check your mic settings.');
   }
   setBed('full');
   await chatTurn(blob);
@@ -609,7 +627,7 @@ async function endTalk() {
 async function judge(r) {
   const item = place.test[index];
   if (r.error === 'not-allowed') {
-    $('heard').textContent = 'Allow the microphone to play.';
+    $('heard').textContent = 'Allow the microphone (the mic or lock icon by the address bar), then hold Talk again. No need to refresh.';
     busy = false;
     setTalk(true, 'Hold to talk');
     return;
