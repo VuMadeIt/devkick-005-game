@@ -553,6 +553,10 @@ body.reduce *, body.reduce *::before, body.reduce *::after { animation: none !im
 .row.small .kbtn { min-width: 140px; }
 .replay[hidden] { display: none; }
 
+/* short screens (phones in landscape): keep the otter's face clear, bubble sits to its left */
+@media (max-height: 560px) {
+  #test .bubble { align-self: flex-start; margin-left: 4vw; margin-top: 52px; max-width: 34vw; }
+}
 /* Intro popup before free talk (over the 3D street) */
 .intro-pop { width: min(520px, 100%); }
 .intro-pop h2 { margin-top: 10px; }
