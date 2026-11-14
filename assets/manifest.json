@@ -1,6 +1,16 @@
 {
   "_readme": "Every generated asset goes here: what it is, the tool, the exact prompt, who made it, and the file. This is our proof for the Chroma tool awards (Meshy, ElevenLabs, Rosebud).",
-  "models": [],
+  "models": [
+    {
+      "id": "glasgow-street",
+      "file": "public/assets/models/glasgow.glb",
+      "tool": "Blender 5.2 script (art/blender/build_glasgow.py) by Claude Code",
+      "reference": "art/ref/glasgow/ (Sadman's Glasgow trip photos, Buchanan Street)",
+      "made_by": "Sadman (Claude Code)",
+      "date": "2026-11-14",
+      "notes": "~51k tris, 28 shared materials, one mesh"
+    }
+  ],
   "audio": [
     {
       "id": "scotland-intro",
@@ -259,6 +269,16 @@
       "made_by": "Sadman (Claude Code)",
       "date": "2026-11-14",
       "notes": "input for Meshy image-to-3D"
+    },
+    {
+      "id": "otter-scot-ref",
+      "file": "art/otter-scot-smooth.png",
+      "tool": "ChatGPT image (gpt-6.1-sol, medium)",
+      "prompt_file": "art/otter-scot-smooth.prompt.txt",
+      "reference": "art/ref/devin-otter-logo.png, art/ref/devin-otter-plush.png",
+      "made_by": "Sadman (Claude Code)",
+      "date": "2026-11-14",
+      "notes": "Scottish Devin otter (tam o' shanter, kilt, sporran); input for Meshy image-to-3D. Earlier faceted take: art/otter-scot.png"
     }
   ],
   "_example": {

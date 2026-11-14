@@ -2,6 +2,7 @@
 // If public/assets/models/otter.glb exists it replaces the placeholder automatically.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { createLoop } from './loop.js';
 
 export function createStage(container) {
@@ -12,10 +13,48 @@ export function createStage(container) {
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#b9c3cc'); // overcast Glasgow sky (Rosebud skybox replaces it)
-  scene.fog = new THREE.Fog('#b9c3cc', 14, 40);
+  scene.fog = new THREE.Fog('#b9c3cc', 22, 85);
+  // soft reflections so the wet paving and windows catch the grey sky (cheap: one prefiltered env map)
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = 0.4;
+
+  // Rain: one draw call of short falling streaks around the camera
+  const RAIN = window.innerWidth < 900 ? 900 : 1800;
+  const rainPos = new Float32Array(RAIN * 6);
+  const rainSpeed = new Float32Array(RAIN);
+  const drop = (i, anyHeight) => {
+    const x = (Math.random() - 0.5) * 30;
+    const z = 9 - Math.random() * 40;
+    const y = anyHeight ? Math.random() * 16 : 16 + Math.random() * 2;
+    rainPos.set([x, y, z, x - 0.04, y + 0.45, z], i * 6);
+    rainSpeed[i] = 16 + Math.random() * 6;
+  };
+  for (let i = 0; i < RAIN; i += 1) drop(i, true);
+  const rainGeo = new THREE.BufferGeometry();
+  rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+  const rain = new THREE.LineSegments(
+    rainGeo,
+    new THREE.LineBasicMaterial({ color: '#dfe7ee', transparent: true, opacity: 0.6, fog: true }),
+  );
+  rain.frustumCulled = false;
+  scene.add(rain);
+  const updateRain = (dt) => {
+    for (let i = 0; i < RAIN; i += 1) {
+      const dy = rainSpeed[i] * dt;
+      const o = i * 6;
+      rainPos[o + 1] -= dy;
+      rainPos[o + 4] -= dy;
+      rainPos[o] -= dy * 0.08;
+      rainPos[o + 3] -= dy * 0.08;
+      if (rainPos[o + 1] < 0) drop(i, false);
+    }
+    rainGeo.attributes.position.needsUpdate = true;
+  };
   const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
-  camera.position.set(0, 1.2, 7);
-  camera.lookAt(0, 0.4, 0); // otter sits in the upper half, clear of the prompt card
+  camera.position.set(0, 2.3, 8.2);
+  camera.lookAt(0, 1.1, -2); // otter in the upper-middle, clear of the prompt card; street recedes behind
 
   scene.add(new THREE.HemisphereLight('#f4f1ea', '#5d5a57', 1.7));
   const sun = new THREE.DirectionalLight('#fff1dc', 1.6);
@@ -181,6 +220,7 @@ export function createStage(container) {
   createLoop({
     update(dt) {
       mixer?.update(dt);
+      updateRain(dt);
       t += dt;
       moodT += dt;
       let y = Math.sin(t * 2) * 0.03;
