@@ -12,7 +12,9 @@
     "check": "vitest run && vite build"
   },
   "dependencies": {
-    "three": "^0.187.0"
+    "@anthropic-ai/sdk": "^1.8.0",
+    "three": "^0.187.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "vite": "^8.3.8",
