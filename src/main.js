@@ -12,6 +12,7 @@ import { turn } from './game/flowers.js';
 
 const $ = (id) => document.getElementById(id);
 const stage = createStage($('stage'));
+if (import.meta.env.DEV) window.__stage = stage; // dev-only hook for checking otter reactions
 const place = scotland;
 const live = createLive($('live'), $('ring'), $('match'));
 let lastLean = 0;

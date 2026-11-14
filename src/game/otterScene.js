@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { createLoop } from './loop.js';
+import { addExpressions } from './expressions.js';
 
 export function createStage(container) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -53,8 +54,8 @@ export function createStage(container) {
     rainGeo.attributes.position.needsUpdate = true;
   };
   const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
-  camera.position.set(0, 2.3, 8.2);
-  camera.lookAt(0, 1.1, -2); // otter in the upper-middle, clear of the prompt card; street recedes behind
+  camera.position.set(0, 2.0, 5.4);
+  camera.lookAt(0, 1.45, -2); // otter in the upper-middle, clear of the prompt card; street recedes behind
 
   scene.add(new THREE.HemisphereLight('#f4f1ea', '#5d5a57', 1.7));
   const sun = new THREE.DirectionalLight('#fff1dc', 1.6);
@@ -168,6 +169,11 @@ export function createStage(container) {
       model.position.y -= box.min.y;
       otter.clear();
       otter.add(model);
+      try {
+        face = addExpressions(model);
+      } catch (err) {
+        console.warn('[otter] no face expressions:', err.message);
+      }
       // Meshy animations: match clips by name so any naming works (idle, talk, cheer/happy, angry/sad...)
       if (gltf.animations?.length) {
         mixer = new THREE.AnimationMixer(model);
@@ -216,7 +222,9 @@ export function createStage(container) {
   let mood = 'idle';
   let moodT = 0;
   let t = 0;
+  let face = null;
   const react = (m) => {
+    face?.set(m);
     mood = m;
     moodT = 0;
     playClip(m);
@@ -231,6 +239,7 @@ export function createStage(container) {
   createLoop({
     update(dt) {
       mixer?.update(dt);
+      face?.update(dt);
       updateRain(dt);
       t += dt;
       moodT += dt;
