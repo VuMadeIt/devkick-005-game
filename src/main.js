@@ -519,10 +519,9 @@ $('intro-test').addEventListener('click', () => {
   }
   startTest();
 });
-$('intro-flowers').addEventListener('click', () => $('pin-flowers').click());
 $('result-test').addEventListener('click', () => $('intro-test').click());
 $('again-line').addEventListener('click', replayLine);
-$('pin-flowers').addEventListener('click', () => {
+$('intro-flowers').addEventListener('click', () => {
   sfx('tap');
   if (!isSupported()) {
     alert('Please open this in Google Chrome so the game can hear you.');
