@@ -143,3 +143,11 @@ h2 { margin: 0 0 12px; font-size: 30px; }
   .talk { min-height: 52px; padding: 8px 26px; font-size: 18px; }
   #credit { display: none; }
 }
+
+/* "your melody vs. the otter's" after each answer */
+.melody { display: none; width: min(320px, 70vw); height: 44px; margin: 6px auto 0; background: #f1ebde; border: 2px solid var(--line); border-radius: 10px; }
+.melody.show { display: block; }
+.melody polyline { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+#mel-ref { stroke: var(--amber); }
+#mel-you { stroke: var(--blue); stroke-dasharray: 0; }
+@media (max-height: 450px) { .melody { height: 30px; margin-top: 3px; } }

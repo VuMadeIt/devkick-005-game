@@ -31,6 +31,26 @@ async function otterSays(line, mood = 'talk') {
   if (mood === 'talk') stage.react('idle');
 }
 
+// ---- melody lines: otter (amber) vs. you (blue), semitones around each speaker's median
+function drawMelody(pitch) {
+  const svg = $('melody');
+  if (!pitch?.you?.length || !pitch?.ref?.length) {
+    svg.classList.remove('show');
+    return;
+  }
+  const pts = (arr) =>
+    arr
+      .map((v, i) => {
+        const x = (i / (arr.length - 1)) * 240;
+        const y = 24 - Math.max(-12, Math.min(12, Number.isFinite(v) ? v : 0)) * 1.8;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(' ');
+  $('mel-ref').setAttribute('points', pts(pitch.ref));
+  $('mel-you').setAttribute('points', pts(pitch.you));
+  svg.classList.add('show');
+}
+
 // ---- state
 let index = 0;
 let trust = 30;
@@ -52,6 +72,7 @@ function showItem(i) {
   $('meaning').textContent = `Means: ${item.meaning}`;
   $('heard').textContent = '';
   $('tip').textContent = '';
+  $('melody').classList.remove('show');
   popIn($('prompt'));
 }
 
@@ -129,6 +150,7 @@ async function judge(r) {
   scores.push(score);
   const b = band(score);
   $('heard').textContent = `Heard: "${r.transcript}"`;
+  drawMelody(r.pitch);
   if (b !== 'good') $('tip').textContent = `Tip: ${item.tip}`;
   sfx(b);
   setTrust(trust + trustDelta(score));
