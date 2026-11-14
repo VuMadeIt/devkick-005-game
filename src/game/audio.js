@@ -41,6 +41,34 @@ function speakTts(text) {
   });
 }
 
+// ---- how loud the otter's voice is right now (0..1), for the mouth movement
+let voiceAnalyser = null;
+let voiceBuf = null;
+let ttsSpeaking = false;
+function analyser() {
+  if (!voiceAnalyser) {
+    const c = ac();
+    voiceAnalyser = c.createAnalyser();
+    voiceAnalyser.fftSize = 512;
+    voiceAnalyser.connect(c.destination);
+    voiceBuf = new Float32Array(voiceAnalyser.fftSize);
+  }
+  return voiceAnalyser;
+}
+let mp3Speaking = false;
+export function voiceLevel() {
+  if (ttsSpeaking) {
+    // the browser voice can't be measured: fake a natural syllable rhythm
+    const t = performance.now() / 1000;
+    return 0.35 + 0.35 * Math.abs(Math.sin(t * 11)) * Math.abs(Math.sin(t * 3.1));
+  }
+  if (!mp3Speaking || !voiceAnalyser) return 0;
+  voiceAnalyser.getFloatTimeDomainData(voiceBuf);
+  let sum = 0;
+  for (let i = 0; i < voiceBuf.length; i += 1) sum += voiceBuf[i] * voiceBuf[i];
+  return Math.min(1, Math.sqrt(sum / voiceBuf.length) * 3.5);
+}
+
 // line = { text, audio }
 export async function say(line, onStart) {
   if (!line) return;
@@ -49,22 +77,32 @@ export async function say(line, onStart) {
   if (line.audio) {
     try {
       const el = new Audio(line.audio);
+      try {
+        ac().createMediaElementSource(el).connect(analyser());
+      } catch {
+        /* no analyser: the mouth just stays shut */
+      }
       await new Promise((resolve, reject) => {
         el.oncanplaythrough = resolve;
         el.onerror = reject;
         setTimeout(reject, 1500);
       });
       await el.play();
+      mp3Speaking = true;
       await new Promise((r) => {
         el.onended = r;
         setTimeout(r, 8000);
       });
+      mp3Speaking = false;
       return;
     } catch {
+      mp3Speaking = false;
       /* fall through to TTS */
     }
   }
+  ttsSpeaking = true;
   await speakTts(line.text);
+  ttsSpeaking = false;
 }
 
 // ---- SFX: lane 3's ElevenLabs mp3s, decoded once; the synth below plays until (or if) they load.

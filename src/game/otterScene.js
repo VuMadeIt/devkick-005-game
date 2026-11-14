@@ -6,6 +6,7 @@ import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.j
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { createLoop } from './loop.js';
 import { addExpressions } from './expressions.js';
+import { voiceLevel } from './audio.js';
 
 export function createStage(container) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -189,6 +190,7 @@ export function createStage(container) {
           bad: find('angry', 'disappoint', 'sad', 'no'),
           suspicious: find('angry', 'suspicious', 'look'),
         };
+        mixer.addEventListener('finished', () => playClip('idle'));
         playClip('idle');
       }
     },
@@ -212,8 +214,9 @@ export function createStage(container) {
     if (current === next && next.isRunning()) return;
     next.reset();
     // talking loops while the voice plays; reactions play once and hold their last pose briefly
-    next.setLoop(name === 'talk' ? THREE.LoopRepeat : THREE.LoopOnce, Infinity);
-    next.clampWhenFinished = name !== 'talk';
+    const loops = name === 'talk' || name === 'idle';
+    next.setLoop(loops ? THREE.LoopRepeat : THREE.LoopOnce, Infinity);
+    next.clampWhenFinished = !loops;
     next.fadeIn(0.25).play();
     current?.fadeOut(0.25);
     current = next;
@@ -248,7 +251,7 @@ export function createStage(container) {
   createLoop({
     update(dt) {
       mixer?.update(dt);
-      face?.update(dt);
+      face?.update(dt, voiceLevel());
       updateRain(dt);
       t += dt;
       moodT += dt;
