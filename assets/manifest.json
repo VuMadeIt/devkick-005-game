@@ -17,7 +17,7 @@
       "reference": "art/otter-scot-smooth.png",
       "made_by": "Sadman (Claude Code driving Meshy in his browser)",
       "date": "2026-11-14",
-      "notes": "30,960 tris, 4.5 MB; raw Meshy download kept locally in art/meshy/ (not committed, 21 MB)"
+      "notes": "30,960 tris, 4.5 MB; raw Meshy download kept locally in art/meshy/ (not committed, 21 MB); v2 adds Meshy Idle 1 (Idle_02). Face (brows, blinks, voice-driven mouth, blush) is code: src/game/expressions.js"
     }
   ],
   "audio": [

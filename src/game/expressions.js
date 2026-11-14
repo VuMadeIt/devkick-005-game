@@ -30,12 +30,12 @@ export function addExpressions(model) {
     const hit = ray.intersectObjects(meshes, false)[0];
     return hit ? hit.point.z : box.max.z;
   };
-  const browY = box.min.y + 0.775 * H;
+  const browY = box.min.y + 0.785 * H;
   const eyeDX = 0.1 * H;
   const parent = head || model;
   const ink = new THREE.MeshBasicMaterial({ color: '#1a120c' });
   const blushMat = new THREE.MeshBasicMaterial({ color: '#ff6f8a', transparent: true, opacity: 0, depthWrite: false });
-  const browGeo = new THREE.CapsuleGeometry(0.012 * H, 0.055 * H, 4, 8);
+  const browGeo = new THREE.CapsuleGeometry(0.019 * H, 0.075 * H, 4, 10);
   const brows = [-1, 1].map((side) => {
     const x = cx + side * eyeDX;
     const world = new THREE.Vector3(x, browY, faceZ(x, browY) + 0.004 * H);
@@ -68,6 +68,45 @@ export function addExpressions(model) {
     return g;
   });
 
+  const facePart = (mesh, x, y, push) => {
+    const world = new THREE.Vector3(x, y, faceZ(x, y) + push * H);
+    const g = new THREE.Group();
+    g.position.copy(parent.worldToLocal(world));
+    g.quaternion.copy(brows[0].pivot.quaternion);
+    g.scale.copy(brows[0].pivot.scale);
+    g.add(mesh);
+    parent.add(g);
+    return g;
+  };
+
+  // mouth: a dark opening with a tongue, under the nose; opens with the voice
+  const mouthY = box.min.y + 0.648 * H;
+  const mouth = new THREE.Mesh(
+    new THREE.CircleGeometry(0.03 * H, 20),
+    new THREE.MeshBasicMaterial({ color: '#3a1411' }),
+  );
+  const tongue = new THREE.Mesh(
+    new THREE.CircleGeometry(0.016 * H, 16),
+    new THREE.MeshBasicMaterial({ color: '#e0707a' }),
+  );
+  tongue.position.set(0, -0.012 * H, 0.001 * H);
+  mouth.add(tongue);
+  facePart(mouth, cx, mouthY, 0.008);
+  mouth.scale.set(1, 0.001, 1);
+
+  // eyelids in fur colour that close over the eyes for blinks
+  const eyeY = box.min.y + 0.722 * H;
+  const lidR = 0.05 * H;
+  const lidMat = new THREE.MeshBasicMaterial({ color: '#d98f45' });
+  const lids = [-1, 1].map((side) => {
+    const lid = new THREE.Mesh(new THREE.CircleGeometry(lidR, 20), lidMat);
+    facePart(lid, cx + side * 0.103 * H, eyeY, 0.012);
+    lid.scale.set(1, 0.001, 1);
+    return lid;
+  });
+  let nextBlink = 1.5 + Math.random() * 2;
+  let blinkT = -1;
+
   let target = POSES.idle;
   const cur = { ...POSES.idle };
   let t = 0;
@@ -75,8 +114,32 @@ export function addExpressions(model) {
     set(mood) {
       target = POSES[mood] || POSES.idle;
     },
-    update(dt) {
+    update(dt, level = 0) {
       t += dt;
+      // mouth follows the voice loudness, smoothed so it reads as syllables
+      const open = Math.min(1, level * 1.4);
+      mouth.userData.o = (mouth.userData.o || 0) + (open - (mouth.userData.o || 0)) * Math.min(1, dt * 22);
+      const o = mouth.userData.o;
+      mouth.scale.set(0.75 + 0.35 * o, Math.max(0.001, o), 1);
+      // blinks every 2-5 s (and a double blink now and then)
+      nextBlink -= dt;
+      if (nextBlink <= 0 && blinkT < 0) {
+        blinkT = 0;
+        nextBlink = 2 + Math.random() * 3 + (Math.random() < 0.2 ? -1.8 : 0);
+      }
+      let b = 0;
+      if (blinkT >= 0) {
+        blinkT += dt;
+        b = blinkT < 0.07 ? blinkT / 0.07 : blinkT < 0.16 ? 1 - (blinkT - 0.07) / 0.09 : 0;
+        if (blinkT >= 0.16) blinkT = -1;
+      }
+      // a happy squint on good answers, a narrowed look when annoyed
+      const hold = target === POSES.good ? 0.35 : target === POSES.bad || target === POSES.suspicious ? 0.3 : 0;
+      const lid = Math.max(b, hold);
+      for (const l of lids) {
+        l.scale.y = Math.max(0.001, lid);
+        l.position.y = lidR * (1 - lid);
+      }
       const k = 1 - Math.exp(-dt * 12);
       for (const key of Object.keys(cur)) cur[key] += (target[key] - cur[key]) * k;
       const wiggle = target === POSES.talk ? Math.sin(t * 9) * 0.08 : 0;
