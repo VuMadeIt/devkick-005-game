@@ -65,19 +65,18 @@ export function resample(a, n = POINTS) {
   });
 }
 
-// Symmetric DTW (diagonal step counts twice), so the result is a mean distance per point.
-export function dtw(a, b) {
-  let prev = new Float64Array(b.length + 1).fill(Infinity);
-  prev[0] = 0;
-  for (let i = 1; i <= a.length; i += 1) {
-    const cur = new Float64Array(b.length + 1).fill(Infinity);
-    for (let j = 1; j <= b.length; j += 1) {
-      const c = Math.abs(a[i - 1] - b[j - 1]);
-      cur[j] = Math.min(prev[j - 1] + 2 * c, prev[j] + c, cur[j - 1] + c);
-    }
+// Asymmetric DTW: each ref point matches exactly one of yours (local tempo 0..2x), so a flat line
+// can't hide by parking on the ref's zero crossings. Mean |difference| per ref point.
+export function dtw(you, ref) {
+  let prev = null;
+  for (const r of ref) {
+    const cur = you.map((y, i) => {
+      const best = prev ? Math.min(prev[i], prev[i - 1] ?? Infinity, prev[i - 2] ?? Infinity) : i ? Infinity : 0;
+      return best + Math.abs(y - r);
+    });
     prev = cur;
   }
-  return prev[b.length] / (a.length + b.length);
+  return prev[you.length - 1] / ref.length;
 }
 
 // Loudness from first to last loud frame, 0..1, so syllable timing lines up regardless of length.

@@ -45,9 +45,14 @@ describe('normalisation', () => {
 });
 
 describe('dtw', () => {
-  it('is 0 for the same contour, even stretched', () => {
+  it('is 0 for the same contour, even at a different tempo', () => {
     expect(dtw([0, 1, 2, 1], [0, 1, 2, 1])).toBe(0);
     expect(dtw([0, 1, 2, 1], [0, 0, 1, 1, 2, 2, 1, 1])).toBe(0);
+    expect(dtw([0, 0, 1, 1, 2, 2, 1, 1], [0, 1, 2, 1, 1])).toBe(0);
+  });
+
+  it('charges a flat line the full distance to the melody', () => {
+    expect(dtw([0, 0, 0, 0], [3, -3, 3, -3])).toBe(3);
   });
 
   it('is bigger for a different shape', () => {
