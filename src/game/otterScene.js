@@ -2,8 +2,10 @@
 // If public/assets/models/otter.glb exists it replaces the placeholder automatically.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { createLoop } from './loop.js';
+import { addExpressions } from './expressions.js';
 
 export function createStage(container) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -53,8 +55,8 @@ export function createStage(container) {
     rainGeo.attributes.position.needsUpdate = true;
   };
   const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
-  camera.position.set(0, 2.3, 8.2);
-  camera.lookAt(0, 1.1, -2); // otter in the upper-middle, clear of the prompt card; street recedes behind
+  camera.position.set(0, 2.0, 5.4);
+  camera.lookAt(0, 1.45, -2); // otter in the upper-middle, clear of the prompt card; street recedes behind
 
   scene.add(new THREE.HemisphereLight('#f4f1ea', '#5d5a57', 1.7));
   const sun = new THREE.DirectionalLight('#fff1dc', 1.6);
@@ -105,7 +107,7 @@ export function createStage(container) {
   cone.position.set(-6.5, 3.3, -1.5);
   street.add(plinth, rider, cone);
   scene.add(street);
-  new GLTFLoader().load(
+  new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load(
     'assets/models/glasgow.glb',
     (gltf) => {
       scene.remove(street);
@@ -168,19 +170,24 @@ export function createStage(container) {
       model.position.y -= box.min.y;
       otter.clear();
       otter.add(model);
+      try {
+        face = addExpressions(model);
+      } catch (err) {
+        console.warn('[otter] no face expressions:', err.message);
+      }
       // Meshy animations: match clips by name so any naming works (idle, talk, cheer/happy, angry/sad...)
       if (gltf.animations?.length) {
         mixer = new THREE.AnimationMixer(model);
         const find = (...words) =>
           gltf.animations.find((c) => words.some((w) => c.name.toLowerCase().includes(w)));
-        const idle = find('idle', 'stand', 'breath') || gltf.animations[0];
+        // Meshy clips -> reactions (talking while it speaks; cheer / shrug / annoyed after an answer)
         clips = {
-          idle,
-          talk: find('talk', 'speak', 'gesture', 'explain') || idle,
-          good: find('cheer', 'happy', 'clap', 'jump', 'dance', 'victory') || idle,
-          ok: find('think', 'shrug', 'nod', 'look') || idle,
-          bad: find('angry', 'sad', 'disappoint', 'shake', 'no') || idle,
-          suspicious: find('suspicious', 'angry', 'look', 'think') || idle,
+          idle: find('idle', 'breath') || null,
+          talk: find('talk_with_hands', 'talk', 'speak', 'gesture'),
+          good: find('cheer', 'happy', 'clap', 'victory', 'dance'),
+          ok: find('shrug', 'think', 'nod'),
+          bad: find('angry', 'disappoint', 'sad', 'no'),
+          suspicious: find('angry', 'suspicious', 'look'),
         };
         playClip('idle');
       }
@@ -193,11 +200,22 @@ export function createStage(container) {
   let clips = null;
   let current = null;
   function playClip(name) {
-    if (!mixer || !clips?.[name]) return;
-    const next = mixer.clipAction(clips[name]);
-    if (current === next) return;
-    next.reset().fadeIn(0.2).play();
-    current?.fadeOut(0.2);
+    if (!mixer) return;
+    const clip = clips?.[name];
+    if (!clip) {
+      // back to the rest pose (procedural idle bob keeps it alive)
+      current?.fadeOut(0.3);
+      current = null;
+      return;
+    }
+    const next = mixer.clipAction(clip);
+    if (current === next && next.isRunning()) return;
+    next.reset();
+    // talking loops while the voice plays; reactions play once and hold their last pose briefly
+    next.setLoop(name === 'talk' ? THREE.LoopRepeat : THREE.LoopOnce, Infinity);
+    next.clampWhenFinished = name !== 'talk';
+    next.fadeIn(0.25).play();
+    current?.fadeOut(0.25);
     current = next;
   }
 
@@ -205,7 +223,9 @@ export function createStage(container) {
   let mood = 'idle';
   let moodT = 0;
   let t = 0;
+  let face = null;
   const react = (m) => {
+    face?.set(m);
     mood = m;
     moodT = 0;
     playClip(m);
@@ -220,6 +240,7 @@ export function createStage(container) {
   createLoop({
     update(dt) {
       mixer?.update(dt);
+      face?.update(dt);
       updateRain(dt);
       t += dt;
       moodT += dt;

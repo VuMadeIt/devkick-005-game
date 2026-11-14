@@ -551,6 +551,7 @@ body.reduce *, body.reduce *::before, body.reduce *::after { animation: none !im
 
 .mute { font-family: var(--title); letter-spacing: 0.5px; color: var(--parch); background: #4a3426; border: 3px solid #1b120c; border-radius: 6px; box-shadow: 0 3px 0 #1b120c; }
 .row.small .kbtn { min-width: 140px; }
+.replay[hidden] { display: none; }
 
 /* Intro popup before free talk (over the 3D street) */
 .intro-pop { width: min(520px, 100%); }
