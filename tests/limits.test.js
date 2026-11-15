@@ -60,3 +60,33 @@ describe('clientIp', () => {
     expect(clientIp({ headers: {}, socket: { remoteAddress: '127.0.0.1' } })).toBe('127.0.0.1');
   });
 });
+
+describe('API guards', async () => {
+  const { handleOtter, nodeHandler } = await import('../server/otter.js');
+  const { vi } = await import('vitest');
+  const call = async (ip, handler) => {
+    const res = { headers: {}, setHeader(k, v) { this.headers[k] = v; }, end(b) { this.body = JSON.parse(b); } };
+    await nodeHandler({ method: 'POST', headers: { 'x-forwarded-for': ip }, body: {} }, res, {}, handler);
+    return res;
+  };
+  it('answers 429 with Retry-After once an IP goes over 20 a minute', async () => {
+    const ok = async function handleOtter() { return { fine: true }; };
+    for (let i = 0; i < 20; i += 1) expect((await call('7.7.7.7', ok)).statusCode).toBe(200);
+    const res = await call('7.7.7.7', ok);
+    expect(res.statusCode).toBe(429);
+    expect(Number(res.headers['retry-after'])).toBeGreaterThan(0);
+    expect(res.body.retryAfter).toBeGreaterThan(0);
+    expect((await call('8.8.8.8', ok)).statusCode).toBe(200);
+  });
+  it('past the daily cap, /api/otter answers in character without calling any vendor', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const env = { MAX_AI_TURNS_PER_DAY: '0', ELEVENLABS_API_KEY: 'test' };
+    const glasgow = await handleOtter({ said: 'aye', audio: 'AAAA', npc: 'senga', trust: 40, turn: 2 }, env);
+    expect(glasgow).toMatchObject({ capped: true, trust: 40, delta: 0, turn: 2, outcome: 'continue', audio: null });
+    expect(glasgow.reply).toMatch(/morra/);
+    const mumbai = await handleOtter({ said: 'haan', npc: 'mor', trust: 30, turn: 0 }, env);
+    expect(mumbai.reply).toMatch(/tomorrow/);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+});

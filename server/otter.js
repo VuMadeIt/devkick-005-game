@@ -3,6 +3,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 import { normalise, similarity } from '../src/voice/match.js';
+import { clientIp, createDailyCap, createRateLimiter, maxTurnsPerDay } from './limits.js';
 import { OtterTurn, ALL_CHARACTERS, regionOf, systemPromptFor, turnSchemaFor } from './otter-prompt.js';
 
 const MODEL = 'claude-opus-5-5';
@@ -26,6 +27,40 @@ const START_TRUST = 30;
 const STT_MODEL = 'scribe_v1';
 const MAX_AUDIO_B64 = 2_000_000; // ~1.5 MB of audio, far more than 15 s of speech
 const MAX_BODY_BYTES = MAX_AUDIO_B64 + 50_000;
+
+// One limiter per route, and one cap on AI turns across every player on this instance.
+const limiters = new Map();
+const limiterFor = (route) => limiters.get(route) ?? limiters.set(route, createRateLimiter()).get(route);
+const aiTurns = createDailyCap();
+
+// What a character says when the day's AI turns are spent: no vendor is called.
+const CAPPED = {
+  scotland: "Ach, ah'm aw talked oot the day, pal. Come back the morra an' we'll have a proper blether.",
+  mumbai: "Arre, I've talked so much today, my voice is gone! Come back tomorrow, na?",
+};
+function authoredTurn({ trust, turn, npc }, reply, extra = {}) {
+  return {
+    heard: '',
+    reply,
+    mood: 'ok',
+    action: 'none',
+    hint: '',
+    suggestions: [],
+    soundedLocal: false,
+    trust,
+    delta: 0,
+    accentDelta: 0,
+    echoScore: null,
+    echo: '',
+    echoAudio: null,
+    turn,
+    maxTurns: MAX_TURNS,
+    outcome: 'continue',
+    audio: null,
+    npc,
+    ...extra,
+  };
+}
 
 const Request = z.object({
   said: z.string().max(400).default(''),
@@ -193,6 +228,10 @@ export async function handleOtter(body, env) {
   const parsed = Request.safeParse(body ?? {});
   if (!parsed.success) throw new HttpError(400, `Bad request: ${parsed.error.issues[0]?.message}`);
   const { trust, turn, history, audio: answerAudio, audioType, npc, accent, echoAccent, echo, opening } = parsed.data;
+  if (!aiTurns.take(maxTurnsPerDay(env))) {
+    console.warn('[otter] daily AI turn cap reached: authored fallback, no vendor calls');
+    return authoredTurn(parsed.data, CAPPED[regionOf(npc)], { capped: true });
+  }
   let said = opening ? '' : parsed.data.said;
   if (answerAudio && !opening) {
     if (!env.ELEVENLABS_API_KEY) throw new HttpError(500, 'ELEVENLABS_API_KEY is needed to transcribe audio');
@@ -262,6 +301,11 @@ export async function nodeHandler(req, res, env, handler = handleOtter) {
     res.end(JSON.stringify(data));
   };
   if (req.method !== 'POST') return send(405, { error: 'POST only' });
+  const limit = limiterFor(handler.name || 'api').check(clientIp(req));
+  if (!limit.ok) {
+    res.setHeader('retry-after', String(limit.retryAfter));
+    return send(429, { error: 'Too many requests. Take a breather and come back later.', retryAfter: limit.retryAfter, scope: limit.scope });
+  }
   try {
     let body = req.body;
     if (body === undefined) {
