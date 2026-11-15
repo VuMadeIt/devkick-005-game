@@ -1,8 +1,8 @@
 // Pure helpers for generate-voice.js: turn a place's content JSON (and its quests) into a list of TTS jobs.
 
-// Every { text, audio } line in a place: intro, outro, each test line, each reaction.
+// Every { text, audio } line in a place: intro, outro, each test line, each reaction, each result celebration.
 export function collectLines(place) {
-  const lines = [place.character?.intro, place.character?.outro];
+  const lines = [place.character?.intro, place.character?.outro, ...(place.path ?? []).map((l) => l.celebration)];
   for (const item of place.test ?? []) {
     lines.push({ text: item.line, audio: item.audio });
     lines.push(...Object.values(item.reactions ?? {}));

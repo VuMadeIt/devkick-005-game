@@ -5,8 +5,8 @@ import scotland from '../src/content/scotland.json';
 import voiceConfig from '../scripts/voice-config.json';
 
 describe('voice line jobs', () => {
-  it('collects intro, outro, each test line and its three reactions', () => {
-    expect(collectLines(scotland)).toHaveLength(2 + scotland.test.length * 4);
+  it('collects intro, outro, each celebration, each test line and its three reactions', () => {
+    expect(collectLines(scotland)).toHaveLength(2 + scotland.path.length + scotland.test.length * 4);
   });
 
   it('adds direction tags to reactions but keeps reference lines plain', () => {
