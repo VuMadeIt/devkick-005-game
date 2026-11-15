@@ -110,3 +110,21 @@ describe('usage estimate', () => {
     expect(u).toEqual({ inputTokens: 300, cachedInputTokens: 200, outputTokens: 50, ttsChars: 3, sttSeconds: 3 });
   });
 });
+
+describe('fitReply (never cut a line mid-word)', async () => {
+  const { fitReply } = await import('../server/cost.js');
+  it('leaves normal replies alone', () => {
+    expect(fitReply('Och, ye again? Whit dae ye want?')).toBe('Och, ye again? Whit dae ye want?');
+  });
+  it('cuts long replies at the last full sentence that fits', () => {
+    const long = `${'Arre yaar, this is a long first sentence about chai and trains. '.repeat(3)}And one more.`;
+    const out = fitReply(long, 140);
+    expect(out.length).toBeLessThanOrEqual(140);
+    expect(out.endsWith('.')).toBe(true);
+  });
+  it('falls back to a word boundary with an ellipsis', () => {
+    const out = fitReply('word '.repeat(60).trim(), 50);
+    expect(out.length).toBeLessThanOrEqual(53);
+    expect(out).toMatch(/word\.\.\.$/);
+  });
+});

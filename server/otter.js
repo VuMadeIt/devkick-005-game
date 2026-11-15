@@ -3,7 +3,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 import { normalise, similarity } from '../src/voice/match.js';
-import { turnUsage } from './cost.js';
+import { fitReply, turnUsage } from './cost.js';
 import { cachedVoice } from './ttsCache.js';
 import { clientIp, createDailyCap, createRateLimiter, maxTurnsPerDay } from './limits.js';
 import { OtterTurn, ALL_CHARACTERS, regionOf, systemPromptFor, turnSchemaFor } from './otter-prompt.js';
@@ -13,7 +13,8 @@ const MODEL = 'claude-opus-5-5';
 // line fits easily in 350 tokens of JSON. The system prompt stays byte-stable so it is prompt-cached.
 export const MAX_TOKENS = 350;
 export const HISTORY_LINES = 8;
-const SHORT_REPLY = 'Keep "reply" around 140 characters (hard limit 220).';
+const SHORT_REPLY =
+  'Say "reply" the way a real person talks: natural, warm, with contractions, one or two sentences, around 140 characters (never over 220).';
 
 // OTTER_MODEL picks the main model (default unchanged). OTTER_MODEL_FAST, if set, takes the simple
 // turns: the opening greeting, quest turns, and short answers with no "say it back" attempt.
@@ -201,7 +202,9 @@ async function askOtter(client, model, npc, history, said, trust, turn, ears) {
   if (response.stop_reason === 'refusal') return { out: { ...REFUSAL[regionOf(npc)] }, user, text: '', usage };
   const text = response.content.find((b) => b.type === 'text')?.text;
   if (!text) throw new HttpError(502, `The otter gave no text (stop_reason ${response.stop_reason})`);
-  return { out: OtterTurn.parse(JSON.parse(text)), user, text, usage };
+  const raw = JSON.parse(text);
+  if (typeof raw.reply === 'string') raw.reply = fitReply(raw.reply);
+  return { out: OtterTurn.parse(raw), user, text, usage };
 }
 
 async function voice(line, key, voiceId) {
