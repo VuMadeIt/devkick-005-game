@@ -128,3 +128,26 @@ describe('fitReply (never cut a line mid-word)', async () => {
     expect(out).toMatch(/word\.\.\.$/);
   });
 });
+
+describe('reply length (one short sentence plus a question)', async () => {
+  const { REPLY_MAX, fitReply } = await import('../server/cost.js');
+  const { OtterTurn } = await import('../server/otter-prompt.js');
+  it('caps replies at REPLY_MAX in both the fitter and the schema', () => {
+    const long = 'Aye, the chippy on the corner does the best fish supper in the whole city. ' .repeat(4);
+    const out = fitReply(long);
+    expect(out.length).toBeLessThanOrEqual(REPLY_MAX);
+    expect(OtterTurn.shape.reply.maxLength).toBe(REPLY_MAX);
+  });
+});
+
+describe('TTS_MODEL_LIVE', async () => {
+  const { liveTtsModel, ttsText } = await import('../server/otter.js');
+  it('defaults to v3 and can be switched by env', () => {
+    expect(liveTtsModel({})).toBe('eleven_v3');
+    expect(liveTtsModel({ TTS_MODEL_LIVE: 'eleven_flash_v2_5' })).toBe('eleven_flash_v2_5');
+  });
+  it('keeps audio tags for v3 and strips them for other models', () => {
+    expect(ttsText('[laughs] Aye, pal.', 'eleven_v3')).toBe('[laughs] Aye, pal.');
+    expect(ttsText('[laughs] Aye, pal.', 'eleven_flash_v2_5')).toBe('Aye, pal.');
+  });
+});

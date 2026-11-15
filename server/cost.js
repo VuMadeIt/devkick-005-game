@@ -21,7 +21,9 @@ export function turnUsage({ system = '', user = '', schema = '', output = '', tt
 
 // A reply that runs over the cap is cut at the last full sentence (or word) that fits, so the
 // character never stops mid-word and the turn never fails on length.
-export function fitReply(text, max = 220) {
+// ~140 characters is one short sentence plus a question; REPLY_MAX leaves room for a natural line.
+export const REPLY_MAX = 160;
+export function fitReply(text, max = REPLY_MAX) {
   if (text.length <= max) return text;
   const cut = text.slice(0, max);
   const sentence = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('? '), cut.lastIndexOf('! '));

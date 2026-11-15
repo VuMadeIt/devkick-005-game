@@ -3,7 +3,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 import { normalise, similarity } from '../src/voice/match.js';
-import { fitReply, turnUsage } from './cost.js';
+import { REPLY_MAX, fitReply, turnUsage } from './cost.js';
 import { cachedVoice } from './ttsCache.js';
 import { clientIp, createDailyCap, createRateLimiter, maxTurnsPerDay } from './limits.js';
 import { OtterTurn, ALL_CHARACTERS, regionOf, systemPromptFor, turnSchemaFor } from './otter-prompt.js';
@@ -13,8 +13,7 @@ const MODEL = 'claude-opus-5-5';
 // line fits easily in 350 tokens of JSON. The system prompt stays byte-stable so it is prompt-cached.
 export const MAX_TOKENS = 350;
 export const HISTORY_LINES = 8;
-const SHORT_REPLY =
-  'Say "reply" the way a real person talks: natural, warm, with contractions, one or two sentences, around 140 characters (never over 220).';
+const SHORT_REPLY = `Say "reply" the way a real person talks: natural and warm, with contractions. One short sentence plus a question, around 140 characters (never over ${REPLY_MAX}).`;
 
 // OTTER_MODEL picks the main model (default unchanged). OTTER_MODEL_FAST, if set, takes the simple
 // turns: the opening greeting, quest turns, and short answers with no "say it back" attempt.
@@ -38,6 +37,11 @@ const keyFor = (npc, env) => (npc !== 'otter' && env.ELEVENLABS_NPC_API_KEY) || 
 // rather than the browser's robot voice.
 const STANDARD = { senga: 'Xb7hH8MSUJpSbSDYk0k2', hamish: 'JBFqnCBsd6RMkjVDRZzb', otter: 'JBFqnCBsd6RMkjVDRZzb' };
 const TTS_MODEL = 'eleven_v3';
+// TTS_MODEL_LIVE voices the improvised replies (default unchanged). A flash/turbo model costs about half
+// per character; authored lines are pre-generated mp3s and keep v3. Non-v3 models read audio tags aloud,
+// so those are stripped first.
+export const liveTtsModel = (env = {}) => env.TTS_MODEL_LIVE || TTS_MODEL;
+export const ttsText = (text, model) => (model === 'eleven_v3' ? text : stripTags(text));
 const MAX_TURNS = 8;
 const START_TRUST = 30;
 
@@ -207,11 +211,11 @@ async function askOtter(client, model, npc, history, said, trust, turn, ears) {
   return { out: OtterTurn.parse(raw), user, text, usage };
 }
 
-async function voice(line, key, voiceId) {
+async function voice(line, key, voiceId, model = TTS_MODEL) {
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
     method: 'POST',
     headers: { 'xi-api-key': key, 'content-type': 'application/json' },
-    body: JSON.stringify({ text: line, model_id: TTS_MODEL }),
+    body: JSON.stringify({ text: line, model_id: model }),
   });
   if (!res.ok) throw new HttpError(502, `ElevenLabs ${res.status}: ${(await res.text()).slice(0, 160)}`);
   return Buffer.from(await res.arrayBuffer()).toString('base64');
@@ -246,7 +250,12 @@ function outcomeOf(trust, turn) {
   return 'continue';
 }
 
-const voiceCached = cachedVoice((...a) => voice(...a));
+// One cache per TTS model, so a line voiced by one model is never served for another.
+const voiceCaches = new Map();
+const ttsCacheStats = () =>
+  [...voiceCaches.values()].reduce((t, c) => ({ hits: t.hits + c.stats.hits, misses: t.misses + c.stats.misses }), { hits: 0, misses: 0 });
+const voiceCachedFor = (model) =>
+  voiceCaches.get(model) ?? voiceCaches.set(model, cachedVoice((text, key, id) => voice(text, key, id, model))).get(model);
 const NOT_HEARD = {
   scotland: "Sorry pal, couldnae hear ye. Gie it another go?",
   mumbai: "Sorry yaar, I couldn't hear you. Say it once more?",
@@ -296,12 +305,16 @@ export async function handleOtter(body, env, deps = {}) {
       // The reply and the "say it back" phrase are voiced at the same time; the phrase clip is what
       // the player's attempt gets compared with.
       const key = keyFor(npc, env);
-      const speak = (text) =>
-        voiceCached(text, key, voiceId).catch((err) => {
+      const ttsModel = liveTtsModel(env);
+      const voiceCached = voiceCachedFor(ttsModel);
+      const speak = (line) => {
+        const text = ttsText(line, ttsModel);
+        return voiceCached(text, key, voiceId).catch((err) => {
           if (!/voice_not_found/.test(err.message)) throw err;
           console.warn(`[otter] voice ${voiceId} not on this ElevenLabs account, using a standard voice`);
           return voiceCached(text, key, STANDARD[npc] ?? STANDARD.otter);
         });
+      };
       [audio, echoAudio] = await Promise.all([speak(turnOut.reply), turnOut.echo ? speak(turnOut.echo).catch(() => null) : null]);
     } catch (err) {
       console.error('[otter] TTS failed, client will use the browser voice:', err.message);
@@ -388,5 +401,5 @@ function logUsage({ npc, model, asked, tts, answerAudio }) {
   const real = u
     ? { inputTokens: u.input_tokens + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0), cachedInputTokens: u.cache_read_input_tokens ?? 0, outputTokens: u.output_tokens }
     : {};
-  console.info('[otter] turn usage', JSON.stringify({ npc, model, ...est, ...real, ttsCache: voiceCached.stats }));
+  console.info('[otter] turn usage', JSON.stringify({ npc, model, ...est, ...real, ttsCache: ttsCacheStats() }));
 }
