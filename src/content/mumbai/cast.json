@@ -37,7 +37,7 @@
     "quest": "meter",
     "greeting": "Haan, where to? Quickly, quickly.",
     "win": "Mangesh waived the last ten rupees. \"For you, boss.\"",
-    "bust": "Tourist! Mangesh took the longest road in Mumbai.",
+    "bust": "Tourist! Mangesh turned the radio up and gave you the full guided tour.",
     "openers": [
       { "say": "Bhaiya, Dadar chalo", "means": "Brother, take me to Dadar" },
       { "say": "Meter se chalo, na", "means": "Go by the meter, okay?" }
