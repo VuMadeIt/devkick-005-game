@@ -3,10 +3,26 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 import { normalise, similarity } from '../src/voice/match.js';
+import { turnUsage } from './cost.js';
+import { cachedVoice } from './ttsCache.js';
 import { clientIp, createDailyCap, createRateLimiter, maxTurnsPerDay } from './limits.js';
 import { OtterTurn, ALL_CHARACTERS, regionOf, systemPromptFor, turnSchemaFor } from './otter-prompt.js';
 
 const MODEL = 'claude-opus-5-5';
+// Request size: the model only needs the last few lines to stay in the moment, and a short spoken
+// line fits easily in 350 tokens of JSON. The system prompt stays byte-stable so it is prompt-cached.
+export const MAX_TOKENS = 350;
+export const HISTORY_LINES = 8;
+const SHORT_REPLY = 'Keep "reply" around 140 characters (hard limit 220).';
+
+// OTTER_MODEL picks the main model (default unchanged). OTTER_MODEL_FAST, if set, takes the simple
+// turns: the opening greeting, quest turns, and short answers with no "say it back" attempt.
+export function modelFor({ opening = false, kind = 'chat', said = '', echo = '' }, env = {}) {
+  const main = env.OTTER_MODEL || MODEL;
+  const fast = env.OTTER_MODEL_FAST || main;
+  const words = said.trim().split(/\s+/).filter(Boolean).length;
+  return opening || kind === 'quest' || (words <= 4 && !echo) ? fast : main;
+}
 // ElevenLabs voices (Voice Design, Glaswegian). VOICE_<ID> env vars override, e.g. VOICE_SENGA.
 const VOICES = {
   otter: '9wOu10b6k3SOUgwDbKKv', // Devin Otter (Glaswegian)
@@ -76,6 +92,7 @@ const Request = z.object({
   accent: z.number().min(0).max(1).nullable().default(null),
   echoAccent: z.number().min(0).max(1).nullable().default(null),
   echo: z.string().max(60).default(''),
+  kind: z.enum(['chat', 'quest']).default('chat'),
   turn: z.number().int().min(0).max(50).default(0),
   history: z
     .array(z.object({ who: z.enum(['player', 'otter']), text: z.string().max(400) }))
@@ -169,20 +186,22 @@ const REFUSAL = {
   },
 };
 
-async function askOtter(client, npc, history, said, trust, turn, ears) {
+async function askOtter(client, model, npc, history, said, trust, turn, ears) {
+  const user = `${transcript(history.slice(-HISTORY_LINES), said, trust, turn, ears)}\n\n${SHORT_REPLY}`;
   const response = await client.beta.messages.create({
-    model: MODEL,
-    max_tokens: 2000,
+    model,
+    max_tokens: MAX_TOKENS,
     betas: ['server-side-fallback-2026-07-01'],
     fallbacks: 'default',
     output_config: { effort: 'low', format: { type: 'json_schema', schema: turnSchemaFor(npc) } },
     system: [{ type: 'text', text: systemPromptFor(npc), cache_control: { type: 'ephemeral' } }],
-    messages: [{ role: 'user', content: transcript(history, said, trust, turn, ears) }],
+    messages: [{ role: 'user', content: user }],
   });
-  if (response.stop_reason === 'refusal') return { ...REFUSAL[regionOf(npc)] };
+  const usage = response.usage;
+  if (response.stop_reason === 'refusal') return { out: { ...REFUSAL[regionOf(npc)] }, user, text: '', usage };
   const text = response.content.find((b) => b.type === 'text')?.text;
   if (!text) throw new HttpError(502, `The otter gave no text (stop_reason ${response.stop_reason})`);
-  return OtterTurn.parse(JSON.parse(text));
+  return { out: OtterTurn.parse(JSON.parse(text)), user, text, usage };
 }
 
 async function voice(line, key, voiceId) {
@@ -224,10 +243,17 @@ function outcomeOf(trust, turn) {
   return 'continue';
 }
 
-export async function handleOtter(body, env) {
+const voiceCached = cachedVoice((...a) => voice(...a));
+const NOT_HEARD = {
+  scotland: "Sorry pal, couldnae hear ye. Gie it another go?",
+  mumbai: "Sorry yaar, I couldn't hear you. Say it once more?",
+};
+
+// deps.client lets tests pass a fake model client; real traffic builds the Anthropic client.
+export async function handleOtter(body, env, deps = {}) {
   const parsed = Request.safeParse(body ?? {});
   if (!parsed.success) throw new HttpError(400, `Bad request: ${parsed.error.issues[0]?.message}`);
-  const { trust, turn, history, audio: answerAudio, audioType, npc, accent, echoAccent, echo, opening } = parsed.data;
+  const { trust, turn, history, audio: answerAudio, audioType, npc, accent, echoAccent, echo, opening, kind } = parsed.data;
   if (!aiTurns.take(maxTurnsPerDay(env))) {
     console.warn('[otter] daily AI turn cap reached: authored fallback, no vendor calls');
     return authoredTurn(parsed.data, CAPPED[regionOf(npc)], { capped: true });
@@ -238,13 +264,19 @@ export async function handleOtter(body, env) {
     said = await transcribe(answerAudio, audioType, env.ELEVENLABS_API_KEY);
   }
 
+  // Nothing heard: an authored line, no model call and no TTS (the client speaks it with the browser voice).
+  if (!opening && !said.trim()) return authoredTurn(parsed.data, NOT_HEARD[regionOf(npc)], { notHeard: true });
+
   // With no key, the SDK uses the local `ant auth login` profile (dev only; deploys need the key).
-  const client = env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: env.ANTHROPIC_API_KEY }) : new Anthropic();
+  const client =
+    deps.client ?? (env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: env.ANTHROPIC_API_KEY }) : new Anthropic());
+  const model = modelFor({ opening, kind, said, echo }, env);
   const echoScore = said.trim() ? echoScoreOf(said, echo, echoAccent) : null;
   const ears = opening
     ? 'OPENING: the player has just walked up to you. Nobody has said anything yet. Greet them in character in one or two short spoken sentences and ask your first question. trust_delta must be 0 and echo must be empty.'
     : earsLine(accent, echoScore, echo);
-  const turnOut = await askOtter(client, npc, history, said.trim(), trust, turn, ears);
+  const asked = await askOtter(client, model, npc, history, said.trim(), trust, turn, ears);
+  const turnOut = asked.out;
   if (opening) {
     turnOut.trust_delta = 0;
     turnOut.echo = '';
@@ -262,16 +294,17 @@ export async function handleOtter(body, env) {
       // the player's attempt gets compared with.
       const key = keyFor(npc, env);
       const speak = (text) =>
-        voice(text, key, voiceId).catch((err) => {
+        voiceCached(text, key, voiceId).catch((err) => {
           if (!/voice_not_found/.test(err.message)) throw err;
           console.warn(`[otter] voice ${voiceId} not on this ElevenLabs account, using a standard voice`);
-          return voice(text, key, STANDARD[npc] ?? STANDARD.otter);
+          return voiceCached(text, key, STANDARD[npc] ?? STANDARD.otter);
         });
       [audio, echoAudio] = await Promise.all([speak(turnOut.reply), turnOut.echo ? speak(turnOut.echo).catch(() => null) : null]);
     } catch (err) {
       console.error('[otter] TTS failed, client will use the browser voice:', err.message);
     }
   }
+  logUsage({ npc, model, asked, tts: env.ELEVENLABS_API_KEY ? [turnOut.reply, turnOut.echo] : [], answerAudio });
   return {
     heard: said.trim(),
     reply: stripTags(turnOut.reply),
@@ -335,4 +368,22 @@ export async function handleStt(body, env) {
   if (audio.length > MAX_AUDIO_B64) throw new HttpError(413, 'Recording too long');
   if (!env.ELEVENLABS_API_KEY) throw new HttpError(500, 'ELEVENLABS_API_KEY is needed to transcribe audio');
   return { text: await transcribe(audio, String(body.audioType || ''), env.ELEVENLABS_API_KEY) };
+}
+
+// One line per turn with sizes only (never text, audio or keys), so cost can be read off the logs.
+function logUsage({ npc, model, asked, tts, answerAudio }) {
+  const est = turnUsage({
+    system: systemPromptFor(npc),
+    schema: JSON.stringify(turnSchemaFor(npc)),
+    user: asked.user,
+    output: asked.text,
+    tts,
+    audioB64: answerAudio ? answerAudio.length : 0,
+    cachedSystem: true,
+  });
+  const u = asked.usage;
+  const real = u
+    ? { inputTokens: u.input_tokens + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0), cachedInputTokens: u.cache_read_input_tokens ?? 0, outputTokens: u.output_tokens }
+    : {};
+  console.info('[otter] turn usage', JSON.stringify({ npc, model, ...est, ...real, ttsCache: voiceCached.stats }));
 }
