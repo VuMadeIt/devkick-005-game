@@ -109,6 +109,11 @@ Write it as a native Mumbaikar would say it, warm and proud, with a plain-Englis
   playable tonight.
 
 ### M6. Voices (ElevenLabs, within budget)
+**First check if `ELEVENLABS_API_KEY` is set** (test with `[ -n "$ELEVENLABS_API_KEY" ]`; never print it).
+If it isn't set: do everything below **except** the API calls. Write the voice-design prompts into
+`scripts/voice-config.json`, make the scripts support it, run `node scripts/generate-voice.js mumbai --dry`
+to prove the job list is right, and put the exact commands the human must run in the PR description.
+Missing audio falls back to the browser voice, so the game still works.
 - Design 3 voices with ElevenLabs Voice Design (the API that makes voice previews from a description, then
   saves the chosen one). Prompts like: *"A warm, authentic Mumbai, India English accent with natural
   Hinglish, unmistakably Mumbaikar, not generic or exaggerated. [age, personality]. Natural, fluent,
