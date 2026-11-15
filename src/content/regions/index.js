@@ -6,6 +6,8 @@ import flowers from '../flowers.json';
 import { SCOTS_WORDS, findScots } from '../../game/scotsWords.js';
 import mumbai from '../mumbai/mumbai.json';
 import mumbaiCast from '../mumbai/cast.json';
+import cutting from '../mumbai/quests/cutting.json';
+import meter from '../mumbai/quests/meter.json';
 import { MUMBAI_WORDS, findMumbai } from '../../game/mumbaiWords.js';
 
 export const PENDING_REVIEW = 'pending native review';
@@ -47,7 +49,7 @@ export const REGIONS = {
     content: mumbai,
     cast: mumbaiCast,
     words: { list: MUMBAI_WORDS, find: findMumbai, label: 'Mumbai words' },
-    quests: {},
+    quests: { cutting, meter },
     scene: 'mumbai',
     review: PENDING_REVIEW,
     ui: {
