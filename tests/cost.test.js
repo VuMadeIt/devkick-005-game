@@ -155,3 +155,13 @@ describe('TTS_MODEL_LIVE', async () => {
     expect(ttsText('[laughs] Aye, pal.', 'eleven_flash_v2_5')).toBe('Aye, pal.');
   });
 });
+
+describe('live reply voices', async () => {
+  const { voiceFor } = await import('../server/otter.js');
+  it('never gives a Mumbai character the Glaswegian otter voice', () => {
+    expect(voiceFor('mor')).toBe(null);
+    expect(voiceFor('mor', { VOICE_MOR: 'm1' })).toBe('m1');
+    expect(voiceFor('senga')).toBe('U8lGdXfIYVx0Nas6m5XL');
+    expect(voiceFor('otter')).toBe('9wOu10b6k3SOUgwDbKKv');
+  });
+});

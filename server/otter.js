@@ -29,7 +29,10 @@ const VOICES = {
   senga: 'U8lGdXfIYVx0Nas6m5XL', // Senga (Glasgow seagull)
   hamish: 'KnVW5icoKhKlU7DbTW8i', // Big Hamish (Glasgow bus driver)
 };
-const voiceFor = (npc, env) => env[`VOICE_${npc.toUpperCase()}`] || VOICES[npc] || VOICES.otter;
+// Mumbai characters have no designed voice yet: without a VOICE_<ID> override they get no TTS (browser
+// voice) rather than a Glaswegian one.
+export const voiceFor = (npc, env = {}) =>
+  env[`VOICE_${npc.toUpperCase()}`] || VOICES[npc] || (regionOf(npc) === 'scotland' ? VOICES.otter : null);
 // Senga's and Hamish's voices live on Sadman's ElevenLabs account; the otter's on the account behind
 // ELEVENLABS_API_KEY. ELEVENLABS_NPC_API_KEY (Sadman's) voices the NPCs when it's set.
 const keyFor = (npc, env) => (npc !== 'otter' && env.ELEVENLABS_NPC_API_KEY) || env.ELEVENLABS_API_KEY;
@@ -298,8 +301,11 @@ export async function handleOtter(body, env, deps = {}) {
   const voiceId = voiceFor(npc, env);
   let audio = null;
   let echoAudio = null;
+  const tts = Boolean(env.ELEVENLABS_API_KEY && voiceId);
   if (!env.ELEVENLABS_API_KEY) {
     console.warn('[otter] ELEVENLABS_API_KEY not set: the client will use the browser voice');
+  } else if (!voiceId) {
+    console.warn(`[otter] no ElevenLabs voice for ${npc} yet (set VOICE_${npc.toUpperCase()}): the client will use the browser voice`);
   } else {
     try {
       // The reply and the "say it back" phrase are voiced at the same time; the phrase clip is what
@@ -320,7 +326,7 @@ export async function handleOtter(body, env, deps = {}) {
       console.error('[otter] TTS failed, client will use the browser voice:', err.message);
     }
   }
-  logUsage({ npc, model, asked, tts: env.ELEVENLABS_API_KEY ? [turnOut.reply, turnOut.echo] : [], answerAudio });
+  logUsage({ npc, model, asked, tts: tts ? [turnOut.reply, turnOut.echo] : [], answerAudio });
   return {
     heard: said.trim(),
     reply: stripTags(turnOut.reply),
