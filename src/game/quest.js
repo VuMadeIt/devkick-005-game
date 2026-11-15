@@ -3,7 +3,7 @@
 // local. Pure functions over plain data (src/content/<region>/quests/*.json), so it's easy to test.
 //
 // quest = { id, name, character: { id, name }, intro, mood, leaveAt, winAt, wording?,
-//           localWords: [], noLocal?, miss?, topics: [{ words, reply, mood }],
+//           localWords: [], noLocal?, localMax?, miss?, topics: [{ words, reply, mood }],
 //           traps: [{ words, unless?, reply, mood }], asides: { warm: [], cold: [], huh: [] },
 //           beats: [{ id, label, say, facts, hint, traps?, intents: [{ words, next, mood, reply }] }],
 //           endings: { win, lose } }
@@ -26,10 +26,10 @@ export const line = (l) =>
 export const beatIndex = (quest, id) => quest.beats.findIndex((b) => b.id === id);
 export const beatOf = (quest, state) => quest.beats[beatIndex(quest, state.beat)];
 
-export function localness(transcript, localWords, noLocal = -8) {
+export function localness(transcript, localWords, noLocal = -8, localMax = 16) {
   const said = clean(transcript);
   const n = localWords.filter((w) => has(said, w)).length;
-  return n ? Math.min(16, 8 * n) : noLocal;
+  return n ? Math.min(localMax, 8 * n) : noLocal;
 }
 
 export function startQuest(quest) {
@@ -43,7 +43,7 @@ export function questTurn(quest, state, transcript) {
   const beat = quest.beats[i];
   const said = clean(transcript);
   const turns = state.turns + 1;
-  const local = localness(transcript, quest.localWords, quest.noLocal);
+  const local = localness(transcript, quest.localWords, quest.noLocal, quest.localMax);
   const topic = hit(quest.topics, said);
   const out = (s, aside, reply, extra = {}) => ({ state: s, aside: line(aside), reply: line(reply), ending: null, trap: false, moved: false, ...extra });
   const lose = (s, aside) => out(s, aside, quest.endings.lose, { ending: 'lose' });

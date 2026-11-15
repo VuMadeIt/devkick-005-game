@@ -9,6 +9,7 @@
   "leaveAt": 10,
   "winAt": 60,
   "noLocal": -4,
+  "localMax": 8,
   "miss": -5,
   "localWords": ["haan", "han", "nahi", "yaar", "yar", "arre", "arrey", "arey", "achha", "acha", "accha", "chalo", "bhaiya", "bhaiyya", "bhai", "bas", "boss", "na", "ekdum", "mast", "kya", "kaise", "kaisa", "ho", "hai", "theek", "ji", "aur", "ek", "dena", "de do", "kitna", "hua", "cutting", "scene", "timepass"],
   "topics": [
