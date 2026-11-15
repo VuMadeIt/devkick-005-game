@@ -18,6 +18,6 @@ const system = systemPromptFor('otter');
 const schema = JSON.stringify(OTTER_TURN_SCHEMA);
 const audioB64 = Math.round(((4.5 * 4000) * 4) / 3); // a 4.5 s answer
 
-const before = turnUsage({ system, schema, user: transcript(history, player, 55, 7, ears), output: answer(reply), tts: [reply, "Ah'm gaun tae the toon"], audioB64 });
+const before = turnUsage({ system, schema, cachedSystem: true, user: transcript(history, player, 55, 7, ears), output: answer(reply), tts: [reply, "Ah'm gaun tae the toon"], audioB64 });
 const after = turnUsage({ system, schema, cachedSystem: true, user: `${transcript(history.slice(-8), player, 55, 7, ears)}\n\n${SHORT}`, output: answer(shortReply), tts: [shortReply, "Ah'm gaun tae the toon"], audioB64 });
 console.table({ before, after });
