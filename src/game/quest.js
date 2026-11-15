@@ -4,22 +4,24 @@
 //
 // quest = { id, name, character: { id, name }, intro, mood, leaveAt, winAt, wording?,
 //           localWords: [], noLocal?, miss?, topics: [{ words, reply, mood }],
-//           traps: [{ words, reply, mood }], asides: { warm: [], cold: [], huh: [] },
+//           traps: [{ words, unless?, reply, mood }], asides: { warm: [], cold: [], huh: [] },
 //           beats: [{ id, label, say, facts, hint, traps?, intents: [{ words, next, mood, reply }] }],
 //           endings: { win, lose } }
-// Any line (say, reply, ending, aside) is a string or { text, audio }.
+// Any line (say, reply, ending, aside) is a string or { text, audio, means }.
 
 // Keeps digits: speech-to-text writes "ten rupees" as "10 rupees".
 const clean = (s) => ` ${s.toLowerCase().replace(/[’']/g, "'").replace(/[^a-z0-9' ]+/g, ' ').replace(/\s+/g, ' ').trim()} `;
 const has = (said, w) => said.includes(` ${clean(w).trim()} `);
-const hit = (list, said) => (list || []).find((x) => x.words.some((w) => has(said, w)));
+// an entry can list `unless` words ("nahi, 300 nahi, meter se" isn't agreeing to 300)
+const hit = (list, said) => (list || []).find((x) => x.words.some((w) => has(said, w)) && !(x.unless || []).some((w) => has(said, w)));
 const pick = (list, i) => list[i % list.length];
 const clamp = (v) => Math.max(0, Math.min(100, v));
 
 export const WORDING_MODES = ['scripted', 'ai'];
 
 // Every line as { text, audio }, so callers can play a pre-generated clip or fall back to the browser voice.
-export const line = (l) => (l == null ? null : typeof l === 'string' ? { text: l, audio: null } : { text: l.text, audio: l.audio ?? null });
+export const line = (l) =>
+  l == null ? null : typeof l === 'string' ? { text: l, audio: null, means: null } : { text: l.text, audio: l.audio ?? null, means: l.means ?? null };
 
 export const beatIndex = (quest, id) => quest.beats.findIndex((b) => b.id === id);
 export const beatOf = (quest, state) => quest.beats[beatIndex(quest, state.beat)];
@@ -69,7 +71,7 @@ export function questTurn(quest, state, transcript) {
   if (!intent) {
     const quote = transcript.trim().split(/\s+/).slice(0, 6).join(' ');
     const huh = line(pick(quest.asides.huh, state.turns));
-    return out(base, topic?.reply ?? null, { text: `"${quote}"? ${huh.text}`, audio: null });
+    return out(base, topic?.reply ?? null, { text: `"${quote}"? ${huh.text}`, audio: null, means: huh.means });
   }
   const done = [...state.done, beat.id, ...skipped];
   if (intent.next === 'end') {
@@ -94,7 +96,7 @@ export async function wordLine(l, ctx, { mode = 'scripted', rephrase } = {}) {
   if (mode !== 'ai' || !rephrase || !scripted) return scripted;
   try {
     const text = await rephrase(scripted.text, ctx);
-    return text ? { text, audio: null } : scripted;
+    return text ? { text, audio: null, means: scripted.means } : scripted;
   } catch {
     return scripted;
   }
