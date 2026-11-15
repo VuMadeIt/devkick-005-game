@@ -26,6 +26,7 @@ function loadEnv() {
 }
 
 // src/content/<place>.json (Glasgow) or src/content/<place>/<place>.json, plus src/content/<place>/quests/*.json
+// and src/content/<place>/cast.json (greetings)
 export function loadPlace(placeId) {
   const flat = resolve(root, `src/content/${placeId}.json`);
   const place = JSON.parse(readFileSync(existsSync(flat) ? flat : resolve(root, `src/content/${placeId}/${placeId}.json`), 'utf8'));
@@ -33,7 +34,9 @@ export function loadPlace(placeId) {
   const quests = existsSync(dir)
     ? readdirSync(dir).filter((f) => f.endsWith('.json')).sort().map((f) => JSON.parse(readFileSync(resolve(dir, f), 'utf8')))
     : [];
-  return { place, quests };
+  const castFile = resolve(root, `src/content/${placeId}/cast.json`);
+  const cast = existsSync(castFile) ? JSON.parse(readFileSync(castFile, 'utf8')) : {};
+  return { place, quests, cast };
 }
 
 function logToManifest(done, config) {
@@ -71,11 +74,11 @@ async function main() {
   const force = flags.includes('--force');
   const dry = flags.includes('--dry');
   const maxChars = Number(flags.find((f) => f.startsWith('--max-chars='))?.split('=')[1] ?? 10000);
-  const { place, quests } = loadPlace(placeId);
+  const { place, quests, cast } = loadPlace(placeId);
   const config = JSON.parse(readFileSync(resolve(root, 'scripts/voice-config.json'), 'utf8'))[placeId];
   if (!config) throw new Error(`No "${placeId}" in scripts/voice-config.json`);
 
-  const jobs = buildJobs(place, config, quests).filter((j) => force || !existsSync(resolve(root, 'public', j.audio)));
+  const jobs = buildJobs(place, config, quests, cast).filter((j) => force || !existsSync(resolve(root, 'public', j.audio)));
   if (dry) {
     jobs.forEach((j) => console.log(`${j.audio}  [${j.speaker ?? placeId}${j.voiceId ? '' : ', NO VOICE YET'}]  <-  ${j.prompt}`));
     return console.log(`${jobs.length} lines, ${charsOf(jobs)} TTS characters (budget ${maxChars})`);

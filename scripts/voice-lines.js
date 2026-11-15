@@ -29,7 +29,8 @@ export function voiceFor(config, speaker) {
 
 // Adds the voice direction tag (if any) in front of the text. Placement lines are said by
 // config.placeSpeaker (if set), quest lines by the quest's character.
-export function buildJobs(place, config, quests = []) {
+// Cast greetings with a greetingAudio path are said by that character.
+export function buildJobs(place, config, quests = [], cast = {}) {
   const direction = config.direction ?? {};
   const job = (speaker) => ({ text, audio }) => {
     const tag = direction[audio.split('/').pop()];
@@ -38,6 +39,9 @@ export function buildJobs(place, config, quests = []) {
   return [
     ...collectLines(place).map(job(config.placeSpeaker ?? null)),
     ...quests.flatMap((q) => collectQuestLines(q).map(job(q.character?.id ?? null))),
+    ...Object.values(cast)
+      .filter((c) => c.greeting && c.greetingAudio)
+      .map((c) => job(c.id)({ text: c.greeting, audio: c.greetingAudio })),
   ];
 }
 

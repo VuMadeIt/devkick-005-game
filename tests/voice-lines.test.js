@@ -38,12 +38,14 @@ describe('Mumbai voice jobs (per character, pending native review)', async () =>
   const mumbai = (await import('../src/content/mumbai/mumbai.json')).default;
   const cutting = (await import('../src/content/mumbai/quests/cutting.json')).default;
   const meter = (await import('../src/content/mumbai/quests/meter.json')).default;
+  const cast = (await import('../src/content/mumbai/cast.json')).default;
   const config = voiceConfig.mumbai;
 
-  it('voices placement lines as Kaju and quest lines as their own character', () => {
-    const jobs = buildJobs(mumbai, config, [cutting, meter]);
-    expect(jobs.filter((j) => j.speaker === 'kaju').length).toBe(collectLines(mumbai).length + collectQuestLines(cutting).length);
-    expect(jobs.filter((j) => j.speaker === 'mangesh').length).toBe(collectQuestLines(meter).length);
+  it('voices placement lines as Kaju, quest lines and greetings as their own character', () => {
+    const jobs = buildJobs(mumbai, config, [cutting, meter], cast);
+    expect(jobs.filter((j) => j.speaker === 'kaju').length).toBe(collectLines(mumbai).length + collectQuestLines(cutting).length + 1);
+    expect(jobs.filter((j) => j.speaker === 'mangesh').length).toBe(collectQuestLines(meter).length + 1);
+    expect(jobs.filter((j) => j.speaker === 'mor').map((j) => j.audio)).toEqual(['assets/audio/mumbai/greeting-mor.mp3']);
   });
 
   it('gives every quest line a unique audio path under assets/audio/mumbai/quests', () => {
@@ -61,7 +63,7 @@ describe('Mumbai voice jobs (per character, pending native review)', async () =>
   it('designs one voice per Mumbai character and stays inside the TTS budget', () => {
     expect(Object.keys(config.characters).sort()).toEqual(['kaju', 'mangesh', 'mor']);
     for (const c of Object.values(config.characters)) expect(c.design.voice_description).toMatch(/Mumbai/);
-    expect(charsOf(buildJobs(mumbai, config, [cutting, meter]))).toBeLessThan(10000);
+    expect(charsOf(buildJobs(mumbai, config, [cutting, meter], cast))).toBeLessThan(10000);
   });
 
   it('keeps Glasgow jobs on the one place voice', () => {

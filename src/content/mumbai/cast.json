@@ -14,6 +14,7 @@
     "card": "",
     "quest": "cutting",
     "greeting": "Arre, new face! What will you have, boss?",
+    "greetingAudio": "assets/audio/mumbai/greeting-kaju.mp3",
     "win": "Kaju says: \"Your usual?\" You're a regular now!",
     "bust": "Tourist! Kaju made you a chai tea latte. With a straw.",
     "openers": [
@@ -36,6 +37,7 @@
     "card": "",
     "quest": "meter",
     "greeting": "Haan, where to? Quickly, quickly.",
+    "greetingAudio": "assets/audio/mumbai/greeting-mangesh.mp3",
     "win": "Mangesh waived the last ten rupees. \"For you, boss.\"",
     "bust": "Tourist! Mangesh turned the radio up and gave you the full guided tour.",
     "openers": [
@@ -57,6 +59,7 @@
     "goal": "Charm her at the wedding (free talk)",
     "card": "",
     "greeting": "Arre beta, you came! Have you eaten? Whose side are you from, bride or groom?",
+    "greetingAudio": "assets/audio/mumbai/greeting-mor.mp3",
     "win": "Mor Aunty pulled you into the family photo!",
     "bust": "Tourist! Mor Aunty sent you to the buffet line, the long one.",
     "openers": [
