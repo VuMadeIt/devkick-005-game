@@ -3,7 +3,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 import { normalise, similarity } from '../src/voice/match.js';
-import { OtterTurn, OTTER_TURN_SCHEMA, CHARACTERS, systemPromptFor } from './otter-prompt.js';
+import { OtterTurn, ALL_CHARACTERS, regionOf, systemPromptFor, turnSchemaFor } from './otter-prompt.js';
 
 const MODEL = 'claude-opus-5-5';
 // ElevenLabs voices (Voice Design, Glaswegian). VOICE_<ID> env vars override, e.g. VOICE_SENGA.
@@ -33,7 +33,7 @@ const Request = z.object({
   audio: z.string().max(MAX_AUDIO_B64).optional(),
   audioType: z.string().max(60).regex(/^audio\/[\w.+-]+(;\s*codecs=[\w.+-]+)?$/).optional(),
   trust: z.number().min(0).max(100).default(START_TRUST),
-  npc: z.enum(Object.keys(CHARACTERS)).default('otter'),
+  npc: z.enum(Object.keys(ALL_CHARACTERS)).default('otter'),
   // true: the player just walked up; the character greets them (not a turn, trust unchanged)
   opening: z.boolean().default(false),
   // How local the player's voice sounded (0-1, measured in the browser), and how well they matched
@@ -104,31 +104,47 @@ export function accentDelta(accent, echoScore) {
   return 0;
 }
 
+// When the model declines, the character changes the subject in its own voice.
+const REFUSAL = {
+  scotland: {
+    reply: "Och, let's no go there. Tell us whit ye're up tae the day?",
+    mood: 'ok',
+    action: 'none',
+    trust_delta: 0,
+    sounded_local: false,
+    hint: '',
+    echo: '',
+    suggestions: [
+      { say: "Ah'm just oot fur a wee wander", means: "I'm just out for a little walk" },
+      { say: 'Gaun fur a fish supper, pal', means: 'Going for fish and chips, mate' },
+    ],
+  },
+  mumbai: {
+    reply: 'Arre, chhodo na. Tell me, have you eaten or not?',
+    mood: 'ok',
+    action: 'none',
+    trust_delta: 0,
+    sounded_local: false,
+    hint: '',
+    echo: '',
+    suggestions: [
+      { say: 'Haan Aunty, the biryani is too good', means: 'Yes Aunty, the biryani is really good' },
+      { say: 'Bas Aunty, one more gulab jamun only', means: "Enough Aunty, just one more sweet" },
+    ],
+  },
+};
+
 async function askOtter(client, npc, history, said, trust, turn, ears) {
   const response = await client.beta.messages.create({
     model: MODEL,
     max_tokens: 2000,
     betas: ['server-side-fallback-2026-07-01'],
     fallbacks: 'default',
-    output_config: { effort: 'low', format: { type: 'json_schema', schema: OTTER_TURN_SCHEMA } },
+    output_config: { effort: 'low', format: { type: 'json_schema', schema: turnSchemaFor(npc) } },
     system: [{ type: 'text', text: systemPromptFor(npc), cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: transcript(history, said, trust, turn, ears) }],
   });
-  if (response.stop_reason === 'refusal') {
-    return {
-      reply: "Och, let's no go there. Tell us whit ye're up tae the day?",
-      mood: 'ok',
-      action: 'none',
-      trust_delta: 0,
-      sounded_local: false,
-      hint: '',
-      echo: '',
-      suggestions: [
-        { say: "Ah'm just oot fur a wee wander", means: "I'm just out for a little walk" },
-        { say: 'Gaun fur a fish supper, pal', means: 'Going for fish and chips, mate' },
-      ],
-    };
-  }
+  if (response.stop_reason === 'refusal') return { ...REFUSAL[regionOf(npc)] };
   const text = response.content.find((b) => b.type === 'text')?.text;
   if (!text) throw new HttpError(502, `The otter gave no text (stop_reason ${response.stop_reason})`);
   return OtterTurn.parse(JSON.parse(text));
