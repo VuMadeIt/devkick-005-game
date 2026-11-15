@@ -335,7 +335,7 @@ export async function nodeHandler(req, res, env, handler = handleOtter) {
     res.end(JSON.stringify(data));
   };
   if (req.method !== 'POST') return send(405, { error: 'POST only' });
-  const limit = limiterFor(handler.name || 'api').check(clientIp(req));
+  const limit = limiterFor(handler.name || 'api').check(clientIp(req, Boolean(env?.VERCEL)));
   if (!limit.ok) {
     res.setHeader('retry-after', String(limit.retryAfter));
     return send(429, { error: 'Too many requests. Take a breather and come back later.', retryAfter: limit.retryAfter, scope: limit.scope });

@@ -55,9 +55,13 @@ describe('daily AI turn cap', () => {
 });
 
 describe('clientIp', () => {
-  it('uses the first forwarded hop, then the socket', () => {
-    expect(clientIp({ headers: { 'x-forwarded-for': '9.9.9.9, 10.0.0.1' } })).toBe('9.9.9.9');
-    expect(clientIp({ headers: {}, socket: { remoteAddress: '127.0.0.1' } })).toBe('127.0.0.1');
+  it('behind a trusted proxy uses the first forwarded hop, then the socket', () => {
+    expect(clientIp({ headers: { 'x-forwarded-for': '9.9.9.9, 10.0.0.1' } }, true)).toBe('9.9.9.9');
+    expect(clientIp({ headers: {}, socket: { remoteAddress: '127.0.0.1' } }, true)).toBe('127.0.0.1');
+  });
+  it('ignores forwarded headers when there is no trusted proxy', () => {
+    const req = { headers: { 'x-forwarded-for': '1.2.3.4', 'x-real-ip': '5.6.7.8' }, socket: { remoteAddress: '127.0.0.1' } };
+    expect(clientIp(req)).toBe('127.0.0.1');
   });
 });
 
@@ -66,7 +70,7 @@ describe('API guards', async () => {
   const { vi } = await import('vitest');
   const call = async (ip, handler) => {
     const res = { headers: {}, setHeader(k, v) { this.headers[k] = v; }, end(b) { this.body = JSON.parse(b); } };
-    await nodeHandler({ method: 'POST', headers: { 'x-forwarded-for': ip }, body: {} }, res, {}, handler);
+    await nodeHandler({ method: 'POST', headers: { 'x-forwarded-for': ip }, body: {} }, res, { VERCEL: '1' }, handler);
     return res;
   };
   it('answers 429 with Retry-After once an IP goes over 20 a minute', async () => {
