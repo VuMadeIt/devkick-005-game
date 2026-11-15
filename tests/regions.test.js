@@ -44,6 +44,15 @@ describe('region registry', () => {
   it('the server knows every free-talk character', () => {
     for (const r of regionList()) for (const c of Object.values(r.cast)) if (!c.quest) expect(ALL_CHARACTERS).toHaveProperty(c.id);
   });
+  it('Mumbai has two quests on its cast and six lesson outlines, all pending native review', () => {
+    const m = REGIONS.mumbai;
+    for (const c of Object.values(m.cast)) if (c.quest) expect(m.quests[c.quest].character.id).toBe(c.id);
+    expect(Object.keys(m.quests).sort()).toEqual(['cutting', 'meter']);
+    expect(m.lessons.review).toBe('pending native review');
+    expect(m.lessons.lessons).toHaveLength(6);
+    expect(new Set(m.lessons.lessons.map((l) => l.kind))).toEqual(new Set(['tonality', 'grammar']));
+    for (const l of m.lessons.lessons) for (const ex of l.examples) expect(ex.means).toBeTruthy();
+  });
   it('unknown ids fall back to Glasgow', () => {
     expect(getRegion('atlantis')).toBe(REGIONS.scotland);
   });

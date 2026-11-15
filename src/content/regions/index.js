@@ -8,6 +8,7 @@ import mumbai from '../mumbai/mumbai.json';
 import mumbaiCast from '../mumbai/cast.json';
 import cutting from '../mumbai/quests/cutting.json';
 import meter from '../mumbai/quests/meter.json';
+import mumbaiLessons from '../mumbai/lessons.json';
 import { MUMBAI_WORDS, findMumbai } from '../../game/mumbaiWords.js';
 
 export const PENDING_REVIEW = 'pending native review';
@@ -50,6 +51,7 @@ export const REGIONS = {
     cast: mumbaiCast,
     words: { list: MUMBAI_WORDS, find: findMumbai, label: 'Mumbai words' },
     quests: { cutting, meter },
+    lessons: mumbaiLessons,
     scene: 'mumbai',
     review: PENDING_REVIEW,
     ui: {
