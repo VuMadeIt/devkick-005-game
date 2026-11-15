@@ -1,6 +1,7 @@
 # Devin brief: Mumbai (Indian English) region + cheaper AI, overnight build
 
-Repo: `sadmanc/devkick-005-game`. Branch: **`vu/mumbai-overnight`** (already pushed; work only here).
+Repo: **`VuMadeIt/devkick-005-game`** (a fork of `sadmanc/devkick-005-game`; push here, the team repo is
+read-only for Devin). Branch: **`vu/mumbai-overnight`** (already pushed; work only here).
 Read first: `AGENTS.md`, `CLAUDE.md`, `docs/prd/PRD.md` sections **9** (Respect Charter), **10.2** (Indian
 English), **12.0** (quest-first product shape), **14.2** (accent pack schema), **17.4** (hybrid quest engine),
 **19** (unit economics) and **F20** (cost controls). Then this brief.
@@ -12,8 +13,8 @@ without making the game feel worse, and protects the API from abuse. Glasgow mus
 
 ## Hard rules (never break)
 
-1. **Never push to `main`, never force-push, never merge the PR.** Only commit and push to
-   `vu/mumbai-overnight`. The human reviews and merges.
+1. **Never push to `main` (in either repo), never force-push, never merge the PR.** Only commit and push to
+   `vu/mumbai-overnight` on the fork. The human reviews and merges.
 2. **Commit small and often:** one working step per commit (aim for 25+ commits overnight), Conventional
    Commit messages, each with this trailer so the human gets credit:
    `Co-Authored-By: Lucas Vu <l3vu@uwaterloo.ca>`. Run `npm run check` before every push; push after every
@@ -160,11 +161,13 @@ Missing audio falls back to the browser voice, so the game still works.
 - Take screenshots of the Mumbai screens.
 
 ### M9. Deliver
-- Open a PR from `vu/mumbai-overnight` to `main` titled **"Mumbai region (preview), quest engine, cheaper
-  AI, rate limits"**, using `.github/pull_request_template.md`: what changed, the cost before/after table,
-  screenshots, what's untested (anything needing Claude), and "pending native review".
-- Post one short comment on each of issues **#1, #2 and #3**: what in that lane's files changed and the PR
-  link. Don't merge.
+- Open a PR from `VuMadeIt:vu/mumbai-overnight` to **`sadmanc/devkick-005-game` `main`** titled **"Mumbai
+  region (preview), quest engine, cheaper AI, rate limits"**, using `.github/pull_request_template.md`: what
+  changed, the cost before/after table, screenshots, what's untested (anything needing Claude), and
+  "pending native review". If opening a PR on the team repo isn't allowed, open it inside the fork
+  (`VuMadeIt/devkick-005-game`, base `main`) instead and say so; the human will open the team PR.
+- If you can, post one short comment on each team issue **#1, #2 and #3** (what in that lane's files changed
+  and the PR link). If not allowed, put those three comments in the PR description. Don't merge.
 
 ## If you get stuck
 Skip the blocked milestone, write down why in the PR, and continue with the next one. Order of
