@@ -124,8 +124,12 @@ describe('fitReply (never cut a line mid-word)', async () => {
   });
   it('falls back to a word boundary with an ellipsis', () => {
     const out = fitReply('word '.repeat(60).trim(), 50);
-    expect(out.length).toBeLessThanOrEqual(53);
+    expect(out.length).toBeLessThanOrEqual(50);
     expect(out).toMatch(/word\.\.\.$/);
+  });
+  it('keeps the ellipsis inside the cap when the last space is near the end', () => {
+    const out = fitReply(`${'a'.repeat(158)} bb ccc`, 160);
+    expect(out.length).toBeLessThanOrEqual(160);
   });
 });
 

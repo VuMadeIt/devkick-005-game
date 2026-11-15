@@ -28,5 +28,8 @@ export function fitReply(text, max = REPLY_MAX) {
   const cut = text.slice(0, max);
   const sentence = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('? '), cut.lastIndexOf('! '));
   if (sentence > max / 3) return cut.slice(0, sentence + 1);
-  return `${cut.slice(0, cut.lastIndexOf(' ')).replace(/[,;:]$/, '')}...`;
+  // Leave room for the ellipsis so the line still fits the schema's max.
+  const room = text.slice(0, max - 3);
+  const space = room.lastIndexOf(' ');
+  return `${(space > 0 ? room.slice(0, space) : room).replace(/[,;:]$/, '')}...`;
 }
