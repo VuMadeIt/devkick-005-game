@@ -13,7 +13,7 @@ const MODEL = 'claude-opus-5-5';
 // line fits easily in 350 tokens of JSON. The system prompt stays byte-stable so it is prompt-cached.
 export const MAX_TOKENS = 350;
 export const HISTORY_LINES = 8;
-const SHORT_REPLY = `Say "reply" the way a real person talks: natural and warm, with contractions. One short sentence plus a question, around 140 characters (never over ${REPLY_MAX}).`;
+const SHORT_REPLY = `Say "reply" the way a real person talks: natural and warm, with contractions. One short sentence plus a question, usually about 110 characters (never over ${REPLY_MAX}).`;
 
 // OTTER_MODEL picks the main model (default unchanged). OTTER_MODEL_FAST, if set, takes the simple
 // turns: the opening greeting, quest turns, and short answers with no "say it back" attempt.

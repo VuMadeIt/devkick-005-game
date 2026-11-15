@@ -58,7 +58,7 @@ describe('the model request', () => {
     expect(user).toContain('line 13');
     expect(user).toContain(`line ${14 - HISTORY_LINES}`);
     expect(user).not.toContain(`line ${13 - HISTORY_LINES}`);
-    expect(user).toMatch(/around 140 characters/);
+    expect(user).toMatch(/One short sentence plus a question, usually about 110 characters \(never over 160\)/);
     expect(out.reply).toBe(TURN.reply);
     // the usage log carries sizes only, never the text
     const line = log.mock.calls.find((c) => c[0] === '[otter] turn usage')[1];
