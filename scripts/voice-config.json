@@ -4,6 +4,16 @@
     "voiceId": "9wOu10b6k3SOUgwDbKKv",
     "voiceName": "Devin Otter (Glaswegian)",
     "modelId": "eleven_v3",
+    "characters": {
+      "senga": {
+        "voiceId": "U8lGdXfIYVx0Nas6m5XL",
+        "voiceName": "Senga (Glasgow seagull), on Sadman's account: run with that key"
+      },
+      "hamish": {
+        "voiceId": "KnVW5icoKhKlU7DbTW8i",
+        "voiceName": "Big Hamish (Glasgow bus driver), on Sadman's account: run with that key"
+      }
+    },
     "direction": {
       "intro.mp3": "[suspicious]",
       "aye-good.mp3": "[impressed]",

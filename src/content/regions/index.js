@@ -45,8 +45,6 @@ export const REGIONS = {
   },
   mumbai: {
     id: 'mumbai',
-    // NPC greetings are the authored cast lines (pre-voiceable), not an AI call: one less model + TTS call per chat
-    authoredGreetings: true,
     name: 'Mumbai',
     pin: { left: 66.4, top: 55.5 },
     content: mumbai,

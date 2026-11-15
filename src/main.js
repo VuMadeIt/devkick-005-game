@@ -399,19 +399,12 @@ async function startChat(id = npc.id) {
   if (npc.id === 'otter') {
     lastOtterLine = place.character.intro;
     showSuggestions(OPENING_SUGGESTIONS.otter);
-  } else if (region.authoredGreetings) {
+  } else {
+    // The authored greeting and its pre-generated mp3 (browser voice until it exists): no AI call before
+    // the player's first answer.
     lastOtterLine = { text: npc.greeting, audio: npc.greetingAudio ?? null };
     chat = { ...chat, history: [{ who: 'otter', text: npc.greeting }] };
-    showSuggestions(npc.openers);
-  } else {
-    // a fresh greeting in their own voice every time; the written one if the server is slow or down
-    $('bubble-text').textContent = '…';
-    $('bubble').classList.add('show');
-    setTalk(false, `${npc.short} is sizing ye up...`);
-    const hello = await askOtter(chat, { npc: npc.id, opening: true }, { timeoutMs: 12000 }).catch(() => null);
-    lastOtterLine = hello ? lineFrom(hello) : { text: npc.greeting, audio: null };
-    if (hello) chat = { ...chat, history: [{ who: 'otter', text: hello.reply }] };
-    showSuggestions(hello?.suggestions?.length ? hello.suggestions : (OPENING_SUGGESTIONS[npc.id] ?? npc.openers));
+    showSuggestions(OPENING_SUGGESTIONS[npc.id] ?? npc.openers);
   }
   await otterSays(lastOtterLine, 'suspicious');
   readyToTalk();

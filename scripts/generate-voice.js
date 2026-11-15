@@ -26,7 +26,7 @@ function loadEnv() {
 }
 
 // src/content/<place>.json (Glasgow) or src/content/<place>/<place>.json, plus src/content/<place>/quests/*.json
-// and src/content/<place>/cast.json (greetings)
+// and the cast's greetings (src/content/<place>/cast.json, or src/content/cast.json for Glasgow)
 export function loadPlace(placeId) {
   const flat = resolve(root, `src/content/${placeId}.json`);
   const place = JSON.parse(readFileSync(existsSync(flat) ? flat : resolve(root, `src/content/${placeId}/${placeId}.json`), 'utf8'));
@@ -34,7 +34,8 @@ export function loadPlace(placeId) {
   const quests = existsSync(dir)
     ? readdirSync(dir).filter((f) => f.endsWith('.json')).sort().map((f) => JSON.parse(readFileSync(resolve(dir, f), 'utf8')))
     : [];
-  const castFile = resolve(root, `src/content/${placeId}/cast.json`);
+  const nested = resolve(root, `src/content/${placeId}/cast.json`);
+  const castFile = existsSync(flat) ? resolve(root, 'src/content/cast.json') : nested;
   const cast = existsSync(castFile) ? JSON.parse(readFileSync(castFile, 'utf8')) : {};
   return { place, quests, cast };
 }

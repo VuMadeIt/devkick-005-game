@@ -69,4 +69,13 @@ describe('Mumbai voice jobs (per character, pending native review)', async () =>
   it('keeps Glasgow jobs on the one place voice', () => {
     expect(new Set(buildJobs(scotland, voiceConfig.scotland).map((j) => j.voiceId))).toEqual(new Set([voiceConfig.scotland.voiceId]));
   });
+
+  it('voices the Glasgow NPC greetings in their own voices (no AI call for hello)', async () => {
+    const cast = (await import('../src/content/cast.json')).default;
+    const jobs = buildJobs({ character: {}, test: [] }, voiceConfig.scotland, [], cast);
+    expect(jobs.map((j) => [j.audio, j.voiceId])).toEqual([
+      ['assets/audio/scotland/greeting-senga.mp3', voiceConfig.scotland.characters.senga.voiceId],
+      ['assets/audio/scotland/greeting-hamish.mp3', voiceConfig.scotland.characters.hamish.voiceId],
+    ]);
+  });
 });
