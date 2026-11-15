@@ -399,6 +399,10 @@ async function startChat(id = npc.id) {
   if (npc.id === 'otter') {
     lastOtterLine = place.character.intro;
     showSuggestions(OPENING_SUGGESTIONS.otter);
+  } else if (region.authoredGreetings) {
+    lastOtterLine = { text: npc.greeting, audio: npc.greetingAudio ?? null };
+    chat = { ...chat, history: [{ who: 'otter', text: npc.greeting }] };
+    showSuggestions(npc.openers);
   } else {
     // a fresh greeting in their own voice every time; the written one if the server is slow or down
     $('bubble-text').textContent = '…';
