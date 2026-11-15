@@ -36,6 +36,8 @@ export const REGIONS = {
       castHeading: "Who are ye talkin' tae?",
       castNote: "Win all three and you're a local legend. Sound like a tourist and they'll get suspicious.",
       language: 'Scots',
+      cantHear: 'Sorry pal, couldnae hear ye ower the rain. Say that again?',
+      comeBackLater: "Haud on, pal, ye've worn me oot! Gie it a wee minute and come back later.",
     },
   },
   mumbai: {
@@ -62,6 +64,8 @@ export const REGIONS = {
       castHeading: 'Who will you talk to?',
       castNote: 'Kaju and Mangesh have a job for you. Mor Aunty just wants to chat (and feed you).',
       language: 'Mumbai English',
+      cantHear: "Sorry yaar, couldn't hear you over the band. Say that again?",
+      comeBackLater: 'Arre, so much talking! Take a little break and come back later, na?',
     },
   },
 };

@@ -438,7 +438,12 @@ async function chatTurn(blob) {
   const { value: answer, error } = await pending;
   if (error) {
     console.warn('[chat] /api/otter failed:', error.message);
-    await otterSays({ text: 'Sorry pal, couldnae hear ye ower the rain. Say that again?' }, 'ok');
+    // 429: this player is going too fast (or the day's AI turns are spent); a kind line, not an error
+    if (error.status === 429) {
+      await otterSays({ text: region.ui.comeBackLater }, 'ok');
+      return readyToTalk('Too many turns for now. Come back in a minute.');
+    }
+    await otterSays({ text: region.ui.cantHear }, 'ok');
     return readyToTalk('');
   }
   const said = answer.heard || '';
