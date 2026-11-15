@@ -74,6 +74,8 @@ describe('the model request', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(glasgow).toMatchObject({ notHeard: true, trust: 50, turn: 3, audio: null });
     expect(glasgow.reply).toMatch(/couldnae hear/);
+    const retry = await handleOtter({ said: '', npc: 'otter', echo: 'pure dead brilliant', trust: 50, turn: 3 }, env, { client });
+    expect(retry.echo).toBe('pure dead brilliant');
     fetchSpy.mockRestore();
   });
 });

@@ -256,7 +256,7 @@ export async function handleOtter(body, env, deps = {}) {
   }
 
   // Nothing heard: an authored line, no model call and no TTS (the client speaks it with the browser voice).
-  if (!opening && !said.trim()) return authoredTurn(parsed.data, NOT_HEARD, { notHeard: true });
+  if (!opening && !said.trim()) return authoredTurn(parsed.data, NOT_HEARD, { notHeard: true, echo });
   // Only turns that reach the model count against the day's AI budget.
   if (!aiTurns.take(maxTurnsPerDay(env))) return capped();
 
