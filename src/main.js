@@ -418,21 +418,27 @@ async function startChat(id = npc.id) {
 }
 
 // blob: the recorded answer, transcribed by ElevenLabs Scribe on the server.
-async function chatTurn(blob) {
-  if (!blob || blob.size < MIN_ANSWER_BYTES) return readyToTalk('Hold the button down while you talk.');
+// typed: text instead of a recording (the dev-only __say hook); null in real play.
+async function chatTurn(blob, typed = null) {
+  if (typed == null && (!blob || blob.size < MIN_ANSWER_BYTES)) return readyToTalk('Hold the button down while you talk.');
   $('heard').textContent = 'You: …';
   showSuggestions(null);
   setTalk(false, `${npc.short} is thinking...`);
   const echo = pendingEcho;
   // Their ears: your voice against their own last line (rough), and against the say-it-back phrase.
-  const ears = Promise.all([
+  const ears = typed != null ? Promise.resolve([null, null]) : Promise.all([
     measureAccent(blob, lastOtterLine?.audio),
     echo ? measureAccent(blob, echo.audio) : null,
   ]);
   // Send first, then fill the wait with a thinking line while the answer is on its way.
-  const pending = Promise.all([blobToBase64(blob), ears])
+  const pending = Promise.all([typed != null ? null : blobToBase64(blob), ears])
     .then(([audio, [accent, echoAccent]]) =>
-      askOtter(chat, { audio, audioType: blob.type, npc: npc.id, accent, echoAccent, echo: echo?.text ?? '' }),
+      askOtter(
+        chat,
+        typed != null
+          ? { said: typed, npc: npc.id, echo: echo?.text ?? '' }
+          : { audio, audioType: blob.type, npc: npc.id, accent, echoAccent, echo: echo?.text ?? '' },
+      ),
     )
     .then(
       (value) => ({ value }),
@@ -984,14 +990,22 @@ $('learn-back').addEventListener('click', () => {
   show('map');
 });
 // Dev only, no mic needed: __say('do cutting bhaiya') answers whatever is on screen (placement, flowers,
-// quest) as if speech-to-text heard it; `score` is the placement match (0-1). #say=<words> does the same.
+// quest, free talk) as if speech-to-text heard it; `score` is the placement match (0-1). #say=<words> does the same.
 if (import.meta.env.DEV) {
   window.__say = async (transcript, score = 0.8) => {
     if (busy || session || !$('test').classList.contains('active')) return 'not ready';
     busy = true;
     setTalk(false, 'Hmm...');
     const r = { transcript, score, error: null };
-    await (mode === 'quest' ? questTalkTurn(r) : mode === 'flowers' ? talkTurn(r) : judge(r));
+    await (
+      mode === 'chat'
+        ? chatTurn(null, transcript)
+        : mode === 'quest'
+          ? questTalkTurn(r)
+          : mode === 'flowers'
+            ? talkTurn(r)
+            : judge(r)
+    );
     return mode;
   };
   window.__quest = (id) => startQuestFor(id);
