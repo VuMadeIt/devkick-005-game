@@ -36,11 +36,24 @@ Units only (tokens, TTS characters, STT seconds). Prices change; multiply by tod
 | Opening greeting, short answers, quest turns | main model | `OTTER_MODEL_FAST` if set (defaults to the main model, so no change until someone picks one) |
 | Repeated lines (echo phrases, fallbacks) | voiced every time | voiced once per instance (`server/ttsCache.js`, 100 lines) |
 | Scripted quest lines and placement lines | static mp3 (Glasgow) | static mp3 for Mumbai too once generated (see M6); browser voice until then |
+| Mumbai NPC greetings | — | authored cast greeting + pre-voiceable mp3, **0 LLM, 0 TTS** (Glasgow keeps its fresh AI greetings) |
+| Reply length | 1-2 sentences, failed the turn if over 220 chars | still 1-2 natural sentences (~140 chars); an over-long reply is cut at the last full sentence instead of failing |
 | Past `MAX_AI_TURNS_PER_DAY` (default 2000) | unlimited spend | authored "come back tomorrow" line, no vendor calls |
 | One IP hammering the API | unlimited | 20/min, 300/day on `/api/otter` and `/api/stt` |
 
 The biggest real-world savings are the ones that remove whole calls: empty-input turns, scripted quests
 with pre-generated audio instead of free talk, and the daily cap. Per-call trimming is a smaller, steady win.
+
+## Quality guardrails
+
+The aim is cheaper without sounding clipped. Replies are asked to sound like a real person talking
+(contractions, one or two sentences, ~140 characters) rather than squeezed short, so a typical reply is
+only ~12% shorter than before (124 vs 141 TTS characters). Most savings come from calls that no longer
+happen and from input trimming, not from shorter lines.
+
+Further cuts that were considered and **not** taken because they'd hurt quality: a cheaper TTS model
+(e.g. a flash model) would weaken the accent, and dropping hints/suggestions from the reply would make
+the game harder to play.
 
 ## Knobs
 
