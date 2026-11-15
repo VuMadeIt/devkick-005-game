@@ -53,7 +53,25 @@ without making the game feel worse, and protects the API from abuse. Glasgow mus
 - Clear 429 handling in the client (the character says a kind "come back later" line).
 - Tests (pure functions for the limiter and the cap).
 
-### M3. Make the AI cheaper (top priority: spend real time here)
+### M3. Make the AI cheaper (THE top priority: do this before M2, and spend real time here)
+The human runs this as a business: **cut Anthropic and ElevenLabs spend as far as possible** while the
+conversation still feels good. **Safe cuts are ON by default** (not behind a flag). Only changes that alter
+quality (switching models) stay behind env vars, with the exact setting to flip written in the PR.
+
+Known waste in today's code (fix all of these first):
+- **NPC openings cost a full AI turn:** `startChat()` in `src/main.js` calls `/api/otter` with
+  `opening: true` for Senga and Hamish just to say hello (1 LLM call + 1 TTS call per conversation). Replace
+  with authored greetings, pre-generated audio and the existing `OPENING_SUGGESTIONS`. Do the same for
+  every Mumbai character. **Zero AI calls before the player's first answer.**
+- **`max_tokens: 2000`** in `server/otter.js` for a ~300-token JSON reply: cap it (e.g. 400).
+- **Full history every turn:** send only the last ~8 lines.
+- **Long replies are voiced in full:** replies may be up to 220 characters and each character costs TTS.
+  Aim for ~140 (1 short sentence plus a question), enforced in the schema and the prompt.
+- **Biggest model for every turn** (`claude-opus-5-5`): add routing (below), default unchanged.
+- **Live TTS uses `eleven_v3`** for every reply. Add `TTS_MODEL_LIVE` (default unchanged) so a cheaper,
+  faster ElevenLabs model can be used for improvised replies while authored lines keep v3 quality. Note the
+  per-character price difference in `cost-notes.md` (verify against ElevenLabs' current pricing page).
+
 Measure first, then cut. Write `docs/prd/cost-notes.md` with **before/after estimates per turn**
 (characters sent to TTS, LLM input/output tokens, STT seconds) and how each change was measured.
 Do as many of these as you can **without making the conversation feel worse**:
@@ -150,4 +168,12 @@ Missing audio falls back to the browser voice, so the game still works.
 
 ## If you get stuck
 Skip the blocked milestone, write down why in the PR, and continue with the next one. Order of
-importance if time runs out: **M1 → M3 → M2 → M5 → M4 → M6 → M7 → M8 → M9** (M8 and M9 always happen).
+importance if time runs out: **M3 → M1 → M2 → M5 → M4 → M6 → M7 → M8 → M9** (M8 and M9 always happen).
+`git pull` before each milestone: the human may push brief updates during the night.
+
+## Cost target (put the real numbers in the PR)
+| Per free-talk conversation (8 turns) | Before (estimate) | Target |
+| --- | --- | --- |
+| Anthropic calls | 8 + 1 opening (NPCs) | 8, smaller (fewer input tokens, capped output) |
+| ElevenLabs TTS characters | ~1,300–1,600 | ≤ 900 (shorter replies, cached lines, no opening TTS) |
+| Scripted quest (Mumbai) | n/a | **0 Anthropic, 0 runtime TTS**, only speech-to-text |
