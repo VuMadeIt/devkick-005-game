@@ -1,24 +1,26 @@
 // Lane 1: game shell. Title -> world map -> otter placement test -> result path.
 import './ui/styles.css';
-import scotland from './content/scotland.json';
+import { REGIONS, regionList } from './content/regions/index.js';
 import { createStage } from './game/otterScene.js';
 import { say, sfx, setMuted, isMuted, unlockAudio, startBed, setBed, setWarmth, chime } from './game/audio.js';
-import { SCOTS_WORDS, findScots } from './game/scotsWords.js';
 import { measureAccent } from './game/accentCheck.js';
-import cast from './content/cast.json';
 import { band, clampTrust, placement, trustDelta } from './game/placement.js';
 import { listen, isSupported } from './voice/index.js';
 import { createLive } from './game/liveVoice.js';
 import { createLessons } from './ui/lessons.js';
 import { newChat, applyTurn, lineFrom, talk as askOtter, START_TRUST } from './game/conversation.js';
 import { startRecording, blobToBase64 } from './voice/record.js';
-import flowers from './content/flowers.json';
 import { turn } from './game/flowers.js';
 
 const $ = (id) => document.getElementById(id);
 const stage = createStage($('stage'));
 if (import.meta.env.DEV) window.__stage = stage; // dev-only hook for checking otter reactions
-const place = scotland;
+// The region you picked on the map: its placement test, cast, word tray and scene. Glasgow until then.
+let region = REGIONS.scotland;
+let place = region.content;
+let cast = region.cast;
+let words = region.words;
+const { flowers } = REGIONS.scotland.quests;
 const live = createLive($('live'), $('ring'), $('match'));
 let lastLean = 0;
 live.onVoice((voiced) => {
@@ -148,7 +150,7 @@ function buildTray() {
   collected = new Set();
   const tray = $('scots');
   tray.innerHTML = '';
-  for (const w of SCOTS_WORDS) {
+  for (const w of words.list) {
     const b = document.createElement('span');
     b.className = 'word';
     b.dataset.id = w.id;
@@ -159,11 +161,11 @@ function buildTray() {
   updateTrayCount();
 }
 function updateTrayCount() {
-  $('scots').dataset.count = `Scots words ${collected.size} / ${SCOTS_WORDS.length}`;
+  $('scots').dataset.count = `${words.label} ${collected.size} / ${words.list.length}`;
 }
 // Light every newly said word; returns how many were new.
 function collectWords(text) {
-  const fresh = findScots(text).filter((id) => !collected.has(id));
+  const fresh = words.find(text).filter((id) => !collected.has(id));
   fresh.forEach((id, i) => {
     collected.add(id);
     const chip = $('scots').querySelector(`[data-id="${id}"]`);
@@ -171,7 +173,7 @@ function collectWords(text) {
       chime(collected.size - fresh.length + i);
       chip?.classList.add('got');
       if (chip) popIn(chip);
-      floatPop(`${SCOTS_WORDS.find((w) => w.id === id).label}!`, 'word', 0);
+      floatPop(`${words.list.find((w) => w.id === id).label}!`, 'word', 0);
     }, i * 180);
   });
   if (fresh.length) updateTrayCount();
@@ -295,7 +297,7 @@ async function primeMic() {
 // ---- the street: pick who to talk to
 function showCast() {
   $('bubble').classList.remove('show');
-  stage.focus('otter');
+  stage.focus(Object.values(cast)[0].id);
   stage.react('idle');
   const wrap = $('cast-cards');
   wrap.innerHTML = '';
@@ -303,7 +305,8 @@ function showCast() {
     const b = document.createElement('button');
     const done = outcomes[c.id];
     b.className = `cast-card ${done === 'local' ? 'won' : done ? 'lost' : ''}`;
-    b.innerHTML = `<img src="${c.card}" alt="" /><b></b><small></small><span class="badge"></span>`;
+    b.innerHTML = `${c.card ? `<img src="${c.card}" alt="" />` : '<i class="card-standin"></i>'}<b></b><small></small><span class="badge"></span>`;
+    if (!c.card) b.querySelector('.card-standin').style.background = `radial-gradient(circle at 50% 40%, ${c.standIn.belly} 0 30%, ${c.standIn.fur} 31%)`;
     b.querySelector('b').textContent = c.name;
     b.querySelector('small').textContent = c.role;
     b.querySelector('.badge').textContent = done === 'local' ? 'Won' : done ? 'Try again' : 'Talk';
@@ -370,7 +373,7 @@ function readyToTalk(note) {
 async function startChat(id = npc.id) {
   mode = 'chat';
   primeMic();
-  npc = cast[id] ?? cast.otter;
+  npc = cast[id] ?? Object.values(cast)[0];
   pendingEcho = null;
   $('again-line').hidden = false;
   $('speaker').textContent = npc.name;
@@ -399,7 +402,7 @@ async function startChat(id = npc.id) {
     const hello = await askOtter(chat, { npc: npc.id, opening: true }, { timeoutMs: 12000 }).catch(() => null);
     lastOtterLine = hello ? lineFrom(hello) : { text: npc.greeting, audio: null };
     if (hello) chat = { ...chat, history: [{ who: 'otter', text: hello.reply }] };
-    showSuggestions(hello?.suggestions?.length ? hello.suggestions : OPENING_SUGGESTIONS[npc.id]);
+    showSuggestions(hello?.suggestions?.length ? hello.suggestions : (OPENING_SUGGESTIONS[npc.id] ?? npc.openers));
   }
   await otterSays(lastOtterLine, 'suspicious');
   readyToTalk();
@@ -483,7 +486,7 @@ async function finishChat(outcome) {
   const wins = Object.values(cast).filter((c) => outcomes[c.id] === 'local').length;
   const note = outcome === 'local' ? npc.win : outcome === 'busted' ? npc.bust : OUTCOME_NOTE.out_of_time.replace('The otter', npc.short);
   const legend = wins === Object.keys(cast).length ? ' LOCAL LEGEND: the whole street trusts ye!' : ` Locals won over: ${wins} of ${Object.keys(cast).length}.`;
-  $('result-note').textContent = `${note}${legend} Scots words: ${collected.size} of ${SCOTS_WORDS.length}.`;
+  $('result-note').textContent = `${note}${legend} ${words.label}: ${collected.size} of ${words.list.length}.`;
   $('again').textContent = 'Talk to someone else';
   stage.react(p.index >= 2 ? 'good' : 'ok');
   if (p.level.celebration) {
@@ -741,15 +744,50 @@ $('play').addEventListener('click', () => {
   sfx('tap');
   show('map');
 });
-document.querySelector('.pin.live').addEventListener('click', () => {
-  sfx('tap');
-  // Free talk only needs a mic recorder (speech-to-text runs on the server), so most browsers work.
-  if (!navigator.mediaDevices?.getUserMedia || !globalThis.MediaRecorder) {
-    alert('This browser cannot use the microphone. Please open the game in Chrome, Edge, Safari or Firefox.');
-    return;
-  }
-  showIntro();
-});
+// Map pins come from the region registry; picking one loads that region's intro, cast, words and scene.
+function chooseRegion(id) {
+  region = REGIONS[id];
+  place = region.content;
+  cast = region.cast;
+  words = region.words;
+  npc = Object.values(cast)[0];
+  stage.setRegion?.(id);
+  const ui = region.ui;
+  $('intro-place').textContent = ui.place;
+  $('intro-heading').textContent = ui.heading;
+  $('intro-note').textContent = ui.note;
+  $('intro-howto').innerHTML = ui.howto.map((li) => `<li>${li}</li>`).join('');
+  $('intro-review').hidden = !region.review;
+  $('intro-review').textContent = region.review ? `Preview: ${region.review}` : '';
+  $('intro-flowers').hidden = !region.quests.flowers;
+  $('intro-start').textContent = ui.talk;
+  $('cast-street').textContent = ui.street;
+  $('cast-heading').textContent = ui.castHeading;
+  $('cast-note').textContent = ui.castNote;
+  $('learn-lang').textContent = ui.language;
+}
+for (const r of regionList()) {
+  const pin = document.createElement('button');
+  pin.className = 'pin live';
+  pin.dataset.place = r.id;
+  pin.style.left = `${r.pin.left}%`;
+  pin.style.top = `${r.pin.top}%`;
+  pin.setAttribute('aria-label', r.review ? `${r.name} (preview, ${r.review})` : r.name);
+  pin.innerHTML = '<span class="dot"></span><span class="label"></span>';
+  pin.querySelector('.label').textContent = r.name;
+  if (r.review) pin.insertAdjacentHTML('beforeend', '<span class="preview">Preview: pending native review</span>');
+  pin.addEventListener('click', () => {
+    sfx('tap');
+    // Free talk only needs a mic recorder (speech-to-text runs on the server), so most browsers work.
+    if (!navigator.mediaDevices?.getUserMedia || !globalThis.MediaRecorder) {
+      alert('This browser cannot use the microphone. Please open the game in Chrome, Edge, Safari or Firefox.');
+      return;
+    }
+    chooseRegion(r.id);
+    showIntro();
+  });
+  $('map-pins').appendChild(pin);
+}
 $('intro-start').addEventListener('click', () => {
   sfx('tap');
   showCast();
