@@ -104,7 +104,7 @@ function earsLine(accent, echoScore, echo) {
   return lines.length ? lines.join('\n') : 'Their accent could not be measured this time.';
 }
 
-function transcript(history, said, trust, turn, ears) {
+export function transcript(history, said, trust, turn, ears) {
   const lines = history.map((h) => `${h.who === 'player' ? 'Player' : 'You'}: ${h.text}`);
   return [
     lines.length ? `Conversation so far:\n${lines.join('\n')}` : 'This is the start of the conversation.',
