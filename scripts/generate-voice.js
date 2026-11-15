@@ -51,7 +51,9 @@ function logToManifest(done, config) {
       file: `public/${j.audio}`,
       tool: `ElevenLabs TTS (${config.modelId})`,
       prompt: j.prompt,
-      voice: v ? `${v.voiceName} (${j.voiceId}), made with ElevenLabs Voice Design (${v.design.model_id}): ${v.design.voice_description}` : `${config.voiceName ?? ''} (${j.voiceId})`,
+      voice: v?.design
+        ? `${v.voiceName} (${j.voiceId}), made with ElevenLabs Voice Design (${v.design.model_id}): ${v.design.voice_description}`
+        : `${v?.voiceName ?? config.voiceName ?? ''} (${j.voiceId})`,
       made_by: 'Devin (cloud)',
       date: today,
     };
