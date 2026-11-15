@@ -2,7 +2,7 @@
   "kaju": {
     "id": "kaju",
     "name": "Kaju the crow",
-    "model": "assets/models/crow.glb",
+    "model": "",
     "face": false,
     "x": 0,
     "z": 0,
@@ -24,7 +24,7 @@
   "mangesh": {
     "id": "mangesh",
     "name": "Mangesh the mongoose",
-    "model": "assets/models/mongoose.glb",
+    "model": "",
     "face": false,
     "x": 3.6,
     "z": -4.0,
@@ -46,7 +46,7 @@
   "mor": {
     "id": "mor",
     "name": "Mor Aunty",
-    "model": "assets/models/peacock.glb",
+    "model": "",
     "face": false,
     "x": -3.6,
     "z": -4.2,

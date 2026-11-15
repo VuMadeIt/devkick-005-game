@@ -13,7 +13,7 @@ import { startRecording, blobToBase64 } from './voice/record.js';
 import { turn } from './game/flowers.js';
 
 const $ = (id) => document.getElementById(id);
-const stage = createStage($('stage'));
+const stage = createStage($('stage'), Object.fromEntries(Object.values(REGIONS).map((r) => [r.id, r.cast])));
 if (import.meta.env.DEV) window.__stage = stage; // dev-only hook for checking otter reactions
 // The region you picked on the map: its placement test, cast, word tray and scene. Glasgow until then.
 let region = REGIONS.scotland;
