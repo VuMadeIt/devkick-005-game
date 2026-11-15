@@ -11,6 +11,7 @@ import { createLessons } from './ui/lessons.js';
 import { newChat, applyTurn, lineFrom, talk as askOtter, START_TRUST } from './game/conversation.js';
 import { startRecording, blobToBase64 } from './voice/record.js';
 import { turn } from './game/flowers.js';
+import { startQuest, questTurn, checklist, beatOf, wordingMode, wordLine } from './game/quest.js';
 
 const $ = (id) => document.getElementById(id);
 const stage = createStage($('stage'), Object.fromEntries(Object.values(REGIONS).map((r) => [r.id, r.cast])));
@@ -49,6 +50,7 @@ function show(id) {
   document.body.classList.toggle('flat', $(id).classList.contains('flat'));
   // after free-talk practice, offer the test straight away
   if (id === 'result') $('result-test').hidden = mode === 'test';
+  $('beats').hidden = mode !== 'quest';
 }
 
 // Placement: a good accent test skips you 50 lessons ahead, otherwise you start at lesson 1.
@@ -92,6 +94,7 @@ function popIn(el) {
 async function otterSays(line, mood = 'talk') {
   const bubble = $('bubble');
   $('bubble-text').textContent = line.text;
+  $('bubble-means').textContent = line.means || '';
   bubble.classList.add('show');
   stage.react(mood === 'talk' ? 'talk' : mood);
   setBed('under');
@@ -309,10 +312,12 @@ function showCast() {
     if (!c.card) b.querySelector('.card-standin').style.background = `radial-gradient(circle at 50% 40%, ${c.standIn.belly} 0 30%, ${c.standIn.fur} 31%)`;
     b.querySelector('b').textContent = c.name;
     b.querySelector('small').textContent = c.role;
-    b.querySelector('.badge').textContent = done === 'local' ? 'Won' : done ? 'Try again' : 'Talk';
+    const quest = c.quest && region.quests[c.quest];
+    b.querySelector('.badge').textContent = done === 'local' ? 'Won' : done ? 'Try again' : quest ? 'Quest' : 'Talk';
     b.addEventListener('click', () => {
       sfx('tap');
-      startChat(c.id);
+      if (quest) startQuestFor(c.quest);
+      else startChat(c.id);
     });
     b.addEventListener('pointerenter', () => stage.focus(c.id));
     wrap.appendChild(b);
@@ -544,6 +549,14 @@ async function replayLine() {
     await otterSays(line, 'talk');
     return readyToTalk();
   }
+  if (mode === 'quest') {
+    if (!questLine) return;
+    sfx('tap');
+    busy = true;
+    setTalk(false, 'Listen...');
+    await otterSays(questLine, 'talk');
+    return readyToTalk();
+  }
   const item = place.test[index];
   sfx('tap');
   busy = true;
@@ -625,6 +638,101 @@ async function talkTurn(r) {
   sfx(t.ending === 'buy' ? 'level' : 'bad');
 }
 
+// ---- quests: scripted beats on the quest engine (src/game/quest.js, src/content/<region>/quests/)
+let quest = null;
+let questState = null;
+let questLine = null;
+// ?wording=ai is the hook for model-worded quest lines later; tonight every line is scripted.
+const questWording = new URLSearchParams(location.search).get('wording');
+
+function renderBeats() {
+  const ul = $('beats');
+  ul.innerHTML = '';
+  for (const b of checklist(quest, questState)) {
+    const li = document.createElement('li');
+    li.className = b.done ? 'done' : b.current ? 'current' : '';
+    li.textContent = `${b.done ? '✔' : '◻'} ${b.label}`;
+    ul.appendChild(li);
+  }
+}
+
+function showQuestStep(stuck = false) {
+  const beat = beatOf(quest, questState);
+  $('step').textContent = 'Quest';
+  $('level').textContent = quest.name;
+  $('line').textContent = beat.facts.join(' ');
+  $('meaning').textContent = quest.intro;
+  $('tip').textContent = stuck ? `Tip: try "${beat.hint}"` : '';
+  $('melody').classList.remove('show');
+  renderBeats();
+  popIn($('prompt'));
+}
+
+async function questSays(l, mood) {
+  questLine = await wordLine(l, { quest: quest.id, beat: questState.beat }, { mode: wordingMode(quest, questWording) });
+  await otterSays(questLine, mood);
+}
+
+async function startQuestFor(id) {
+  mode = 'quest';
+  quest = region.quests[id];
+  npc = cast[quest.character.id] ?? npc;
+  primeMic();
+  showSuggestions(null);
+  $('again').textContent = 'Try again';
+  $('again-line').hidden = false;
+  $('scots').classList.remove('show');
+  const start = startQuest(quest);
+  questState = start.state;
+  $('speaker').textContent = quest.character.name;
+  stage.focus(npc.id);
+  live.hide();
+  setTrust(questState.mood);
+  show('test');
+  showQuestStep();
+  $('heard').textContent = '';
+  busy = true;
+  setTalk(false, 'Listen...');
+  await questSays(start.line, 'suspicious');
+  readyToTalk();
+}
+
+async function questTalkTurn(r) {
+  if (!r.transcript) {
+    $('heard').textContent = r.error === 'not-allowed' ? 'Allow the microphone (the mic or lock icon by the address bar), then hold Talk again. No need to refresh.' : "Didn't catch that. Hold the button while you speak.";
+    busy = false;
+    setTalk(true, 'Try again');
+    return;
+  }
+  const before = questState.mood;
+  const t = questTurn(quest, questState, r.transcript);
+  questState = t.state;
+  $('heard').textContent = `Heard: "${r.transcript}"`;
+  setTrust(t.state.mood);
+  const d = t.state.mood - before;
+  const b = t.trap || d < 0 ? 'bad' : d > 0 ? 'good' : 'ok';
+  sfx(b);
+  floatPop(t.trap ? `Tourist trap! ${d}` : `${d >= 0 ? '+' : ''}${d} trust`, b === 'ok' ? '' : b);
+  renderBeats();
+  if (t.aside) await questSays(t.aside, b);
+  await questSays(t.reply, t.ending === 'win' ? 'good' : t.ending === 'lose' ? 'bad' : 'talk');
+  if (!t.ending) {
+    showQuestStep(!t.moved);
+    readyToTalk();
+    return;
+  }
+  outcomes[npc.id] = t.ending === 'win' ? 'local' : 'busted';
+  const wins = Object.values(cast).filter((c) => outcomes[c.id] === 'local').length;
+  $('result-level').textContent = t.ending === 'win' ? 'Local!' : 'Tourist';
+  $('result-score').textContent = String(t.state.mood);
+  $('result-note').textContent = `${t.ending === 'win' ? npc.win : npc.bust} Locals won over: ${wins} of ${Object.keys(cast).length}.`;
+  $('again').textContent = 'Talk to someone else';
+  $('bubble').classList.remove('show');
+  show('result');
+  stage.react(t.ending === 'win' ? 'good' : 'ok');
+  sfx(t.ending === 'win' ? 'level' : 'bad');
+}
+
 // ---- talking (hold Space or hold the button)
 let session = null;
 function beginTalk() {
@@ -645,9 +753,9 @@ function beginTalk() {
     return;
   }
   live.start();
-  if (mode === 'flowers') live.hide(); // no reference clip here: keep the mic ring, drop "Match %"
+  if (mode === 'flowers' || mode === 'quest') live.hide(); // no reference clip here: keep the mic ring, drop "Match %"
   const item = place.test[index];
-  session = mode === 'flowers' ? listen() : listen({ expected: item.accepted.concat(item.line), referenceUrl: item.audio });
+  session = mode === 'flowers' || mode === 'quest' ? listen() : listen({ expected: item.accepted.concat(item.line), referenceUrl: item.audio });
 }
 
 async function endChatTalk(recording) {
@@ -679,7 +787,7 @@ async function endTalk() {
   s.stop();
   const r = await s.result;
   setBed('full');
-  await (mode === 'flowers' ? talkTurn(r) : judge(r));
+  await (mode === 'flowers' ? talkTurn(r) : mode === 'quest' ? questTalkTurn(r) : judge(r));
 }
 
 async function judge(r) {
@@ -821,7 +929,7 @@ $('intro-flowers').addEventListener('click', () => {
 });
 $('again').addEventListener('click', () => {
   sfx('tap');
-  if (mode === 'chat') showCast();
+  if (mode === 'chat' || mode === 'quest') showCast();
   else if (mode === 'flowers') startFlowers();
   else startTest();
 });
@@ -871,6 +979,22 @@ $('learn-back').addEventListener('click', () => {
   sfx('tap');
   show('map');
 });
+// Dev only, no mic needed: __say('do cutting bhaiya') answers whatever is on screen (placement, flowers,
+// quest) as if speech-to-text heard it; `score` is the placement match (0-1). #say=<words> does the same.
+if (import.meta.env.DEV) {
+  window.__say = async (transcript, score = 0.8) => {
+    if (busy || session || !$('test').classList.contains('active')) return 'not ready';
+    busy = true;
+    setTalk(false, 'Hmm...');
+    const r = { transcript, score, error: null };
+    await (mode === 'quest' ? questTalkTurn(r) : mode === 'flowers' ? talkTurn(r) : judge(r));
+    return mode;
+  };
+  window.__quest = (id) => startQuestFor(id);
+  window.addEventListener('hashchange', () => {
+    if (location.hash.startsWith('#say=')) window.__say(decodeURIComponent(location.hash.slice(5)));
+  });
+}
 // Demo shortcut without a mic: #good or #bad jumps straight to the result.
 if (location.hash === '#good' || location.hash === '#bad') {
   const avg = location.hash === '#good' ? 0.82 : 0.31;
