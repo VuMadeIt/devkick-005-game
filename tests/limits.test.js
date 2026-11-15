@@ -87,4 +87,13 @@ describe('API guards', async () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
   });
+  it('silent answers do not spend the daily AI budget', async () => {
+    const env = { MAX_AI_TURNS_PER_DAY: '1' };
+    for (let i = 0; i < 3; i += 1) expect((await handleOtter({ said: '', npc: 'senga' }, env)).notHeard).toBe(true);
+    const create = vi.fn(async () => ({ stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({ reply: 'Aye, whit ye havin?', mood: 'ok', action: 'none', trust_delta: 0, sounded_local: false, hint: '', echo: '', suggestions: [] }) }] }));
+    const client = { beta: { messages: { create } } };
+    const res = await handleOtter({ said: 'a fish supper please', npc: 'senga' }, env, { client });
+    expect(res.capped).toBeUndefined();
+    expect(create).toHaveBeenCalledTimes(1);
+  });
 });

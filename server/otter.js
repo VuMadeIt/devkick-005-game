@@ -244,10 +244,11 @@ export async function handleOtter(body, env, deps = {}) {
   const parsed = Request.safeParse(body ?? {});
   if (!parsed.success) throw new HttpError(400, `Bad request: ${parsed.error.issues[0]?.message}`);
   const { trust, turn, history, audio: answerAudio, audioType, npc, accent, echoAccent, echo, opening } = parsed.data;
-  if (!aiTurns.take(maxTurnsPerDay(env))) {
+  const capped = () => {
     console.warn('[otter] daily AI turn cap reached: authored fallback, no vendor calls');
     return authoredTurn(parsed.data, CAPPED, { capped: true });
-  }
+  };
+  if (aiTurns.used() >= maxTurnsPerDay(env)) return capped();
   let said = opening ? '' : parsed.data.said;
   if (answerAudio && !opening) {
     if (!env.ELEVENLABS_API_KEY) throw new HttpError(500, 'ELEVENLABS_API_KEY is needed to transcribe audio');
@@ -256,6 +257,8 @@ export async function handleOtter(body, env, deps = {}) {
 
   // Nothing heard: an authored line, no model call and no TTS (the client speaks it with the browser voice).
   if (!opening && !said.trim()) return authoredTurn(parsed.data, NOT_HEARD, { notHeard: true });
+  // Only turns that reach the model count against the day's AI budget.
+  if (!aiTurns.take(maxTurnsPerDay(env))) return capped();
 
   // With no key, the SDK uses the local `ant auth login` profile (dev only; deploys need the key).
   const client =
