@@ -94,11 +94,21 @@ describe('TTS cache', () => {
   it('voices the same voice + text once', async () => {
     const voice = vi.fn(async (text, key, id) => `${id}:${text}`);
     const speak = cachedVoice(voice);
-    expect(await speak('Haan, chalo.', 'k', 'v1')).toBe('v1:Haan, chalo.');
-    await speak('Haan, chalo.', 'k', 'v1');
-    await speak('Haan, chalo.', 'k', 'v2');
+    expect(await speak('Aye, nae bother.', 'k', 'v1')).toBe('v1:Aye, nae bother.');
+    await speak('Aye, nae bother.', 'k', 'v1');
+    await speak('Aye, nae bother.', 'k', 'v2');
     expect(voice).toHaveBeenCalledTimes(2);
     expect(speak.stats).toEqual({ hits: 1, misses: 2 });
+  });
+  it('shares one vendor call between concurrent requests, and forgets failures', async () => {
+    const voice = vi.fn(async (text) => text);
+    const speak = cachedVoice(voice);
+    await Promise.all([speak('Aye.', 'k', 'v1'), speak('Aye.', 'k', 'v1')]);
+    expect(voice).toHaveBeenCalledTimes(1);
+    const flaky = vi.fn().mockRejectedValueOnce(new Error('503')).mockResolvedValue('ok');
+    const speak2 = cachedVoice(flaky);
+    await expect(speak2('Aye.', 'k', 'v1')).rejects.toThrow('503');
+    expect(await speak2('Aye.', 'k', 'v1')).toBe('ok');
   });
 });
 
