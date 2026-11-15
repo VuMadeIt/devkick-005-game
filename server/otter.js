@@ -280,6 +280,7 @@ export async function handleOtter(body, env, deps = {}) {
   let audio = null;
   let echoAudio = null;
   const tts = Boolean(env.ELEVENLABS_API_KEY);
+  let billed = [];
   if (!tts) {
     console.warn('[otter] ELEVENLABS_API_KEY not set: the client will use the browser voice');
   } else {
@@ -297,12 +298,14 @@ export async function handleOtter(body, env, deps = {}) {
           return voiceCached(text, key, STANDARD[npc] ?? STANDARD.otter);
         });
       };
+      // Cache hits cost nothing, so only lines not already voiced count as TTS characters in the log.
+      billed = [turnOut.reply, turnOut.echo].filter((l) => l && !voiceCached.has(ttsText(l, ttsModel), voiceId));
       [audio, echoAudio] = await Promise.all([speak(turnOut.reply), turnOut.echo ? speak(turnOut.echo).catch(() => null) : null]);
     } catch (err) {
       console.error('[otter] TTS failed, client will use the browser voice:', err.message);
     }
   }
-  logUsage({ npc, model, asked, tts: tts ? [turnOut.reply, turnOut.echo] : [], answerAudio });
+  logUsage({ npc, model, asked, tts: billed, answerAudio });
   return {
     heard: said.trim(),
     reply: stripTags(turnOut.reply),
